@@ -1,7 +1,8 @@
 # Tara Scope Motor Control with Laser Toggle
 
-# // so i will know ki how to run the motor and the point star using min step angle. 
-# // and also this will help in the - 3_star_calibration - code
+# // so i will know ki how to run the motor and if the min step angle is enough to point a star . or need to do gearing 1:10
+
+# // and this code will also help in the - 3_star_calibration - code
 
 
 

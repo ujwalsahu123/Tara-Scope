@@ -10,6 +10,10 @@
 
 // parallel how motor...
 
+// i think we need to manually hardcode the offset values of mag in the .ino code - after doing mag calib. 
+// and acc , gyro ka too direct hardcoded rahega. 
+
+
 // motor concept -> 
 
 // Alt Az ayga , and the range will become 
