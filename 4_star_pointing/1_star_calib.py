@@ -34,4 +34,8 @@
 # in .ino code this this will be done . 
 
 # ex: ek aisa arudino.ino code jo continuously RPY calculate karta rahega. & button say motors move hum kar sake . & when we want - the RPY value is printed. 
-# and .py code - may sare list hoga stars ka in the terminal - we will select a star . then using the temrinal we will move the motors, then we press enter - the RPY value is read from arduino - alt az is quickly calculated  - difference is calculated - stored in a list - then next iteration starts.
+# and .py code - may sare list hoga stars ka in the terminal - we will select a star . then using the temrinal we will move the motors, then we press enter - the RPY value is read from arduino - alt az is quickly calculated  - difference is calculated - stored in a list - then next iteration starts.\
+
+
+# cannot do like - manually ALT AZ stellerium ya kahi say uthaya and then do differnce with that ALT AZ and pitch yaw.
+# need to use ai-guide wala code which used library , since bad may bhi we will use this teachnique only. - when pointing the star so abhi hee uss hisab say star_offset caluclation karna hoga.

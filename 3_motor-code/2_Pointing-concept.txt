@@ -17,6 +17,12 @@
 // the SF part is v.imp . so write a SF_code.ino - which simply gets the raw sensors values and does SF and gives RPY. 
 
 
+
+
+// also need to think when will the laser be on -> after target reached , or when pressed space.
+
+
+
 // if near then less step move , if far then more step move.
 // and it contineaouly iterates .
 
