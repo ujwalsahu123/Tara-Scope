@@ -53,7 +53,7 @@ ardunio project website link.
 
 
 
-<img href= "video/concept.png">
+<img src= "video/concept.png">
 
 
 
