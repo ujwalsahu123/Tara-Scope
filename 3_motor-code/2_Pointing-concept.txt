@@ -1,6 +1,21 @@
+// so we want to make a .ino code which takes alt az and moves motor to achive the RPY to ALt Az. 
+// 2 din ka kam hai . - just use the SF code & the logic part sooch lay - parallel , etc stuff ...  and mix karde 
+// and then test out karle -> use ai_guide wala code and send alt az to it . and see the error. 
+
 
 // arduino code.txt may bhi hai ..
 // star_pointing gpt chat. 
+
+// basically - we use the SF_code.ino for getting the Rpy from sensor . and we use the Pointing_concept -> which is ek ALT Az diya jaygaa
+// and arduino has to catch it. and then range -> Alt_low , Alt_high. and then there is a logic -> read the Pitch and if pitch < Alt_low then move ALT motor clockwise until 
+// its in range. so basically the motor move until it reach the target posi. 
+// and there are other stuff like - move 1 step when closer , and parallel move both the motors and etc stuff - Run the RPY in parallel function , and in the main function just get the RPY value and make the motors move as per that . 
+// or write the RPY calculation function in the main code . idk which is better. need to think.  
+
+// so the Full-motor-code has 2 parts -> SF part . and logic part. 
+// the logic part is given below - in flowchart. 
+// the SF part is v.imp . so write a SF_code.ino - which simply gets the raw sensors values and does SF and gives RPY. 
+
 
 // if near then less step move , if far then more step move.
 // and it contineaouly iterates .
