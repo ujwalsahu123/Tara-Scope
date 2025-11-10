@@ -1,10 +1,7 @@
 # Ignore all .mp4 files
-*.mp4
 
-# Ignore specific file extensions
-
-*.exe
+# Ignore Magento.exe
+*.exe  
 
 # Ignore specific directories
 video/
-4_Stellector/
