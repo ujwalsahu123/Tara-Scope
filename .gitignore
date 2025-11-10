@@ -1,7 +1,7 @@
 # Ignore all .mp4 files
-
+*.mp4
 # Ignore Magento.exe
 *.exe  
 
 # Ignore specific directories
-video/
+# video/
