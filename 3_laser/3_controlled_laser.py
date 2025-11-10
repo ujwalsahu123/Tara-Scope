@@ -7,7 +7,7 @@
 
 #arduino code
 
-# # #define LASER_PIN 7        // D4184 PWM/SIG input
+# #define LASER_PIN 7        // D4184 PWM/SIG input
 # bool laserOn = false;
 
 # void setLaser(bool on) {

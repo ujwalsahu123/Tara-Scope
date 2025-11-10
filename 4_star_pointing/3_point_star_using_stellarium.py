@@ -1,10 +1,13 @@
 # \first - wite the full-motor-code - which takes a alt az value and moves the motors until the pitch yaw reaches that alt az values.
- 
+# and yaha say bas we send the alt az values. 
+
+# flow :
 # Here , we select a object in sterellium and then it send the RA DEC , ALT AZ , Name of that object . 
 # python code catches it- and using its Name / RA DEC / ALT AZ -> it calcualte the ALT AZ of that object (using libaries (see ai_guide_app.py code) for calculateing ALT AZ of a star )
+# then we fetch star_offset from the .txt file to apply the offset on the alt az - which we got from 3/5 star calibration.
 # then send that ALT AZ to arduino via serial communication for pointing (use the full-motor-code.ino )
 
-# one thing you can do here when calculating the the alt az -> increase the Realtime by + 5 second since its takes around 5 second to -> calucate , give it to arduino and then motor moves . 
+# one thing you can do here when calculating the the alt az -> increase the Realtime by + 5-10 second since its takes around 5 second to -> calucate , give it to arduino and then motor moves . 
 # since in every second the 1st 2nd decimal value changes . so i send a value now , then motor run may it takes 3,4 second then
 
 
