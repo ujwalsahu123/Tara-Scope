@@ -1,0 +1,12 @@
+# Ignore all .mp4 files
+*.mp4
+
+# Ignore specific file extensions
+*.pdf
+*.jpg
+*.png
+*.exe
+
+# Ignore specific directories
+video/
+4_Stellector/

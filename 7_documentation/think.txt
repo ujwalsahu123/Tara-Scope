@@ -1,0 +1,6 @@
+make proper documentation of the project ( starpointer how works , code by code )
+make working ka video on filed wala 
+make pitch video 
+write a reasearch paper : TaraScope - a star navigation system for stargazing
+
+.. think 
