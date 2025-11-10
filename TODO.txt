@@ -1,0 +1,26 @@
+GET 3_d model , laser and laser part from robu. 
+
+1_calibration -> 1 week (sensor manaul read, yellow_file read, calib code read, understand all, mag.py & mag.ino code write , gyro calib, acc think what to do- my previous reading or new reading using motors.)
+
+2_sensor-fusion -> 1 week (full see and understand it, watch videos , use cpp code not python, since slow, write sf.ino code which reads raw values and gives nice RPY. )
+
+3_laser -> 2 days (setup kar and check if it works)
+
+3_motor-code -> 2 days ( run the 1_controlled.py code with laser , then write the 3_full-motor-code.ino which is basically mix of Sf.ino code , Motor pointing logic , and laserfade function. )
+    
+4_star - pointing  -> 1 week
+                    0_basic_pointing - use the ai-guide code to simply calculate the alt az and then send it to full-motor-code 
+                    1_star_calib - use the 0_basic_pointing code and controlled-by-button code to get the offset.
+                    2_use_offset - same as 0_basic_pointing
+                    4_main.py 
+                    5_debug - rethink and make the pointing more accurate
+
+5_destop app -> max 1 week
+
+4_stellector study -> 1 week
+
+6_intro website -> 1 week
+
+7_documentation -> 1 week (each code file explain, write small research paper, working viedo make and put on yt)
+
+8_fund -> 1 week - make pitch deck , pitch video , think business , etc todo see and notes see. 
