@@ -18,6 +18,13 @@
 
 
 
+
+// setup kar and test out the code. and update the fadeLaser code and controLaserSpacebar code (agar kuch changes hai too)
+
+
+
+
+
 // simple code
 #define LASER_PIN 7   // D41 PWM input pin
 

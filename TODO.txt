@@ -23,4 +23,6 @@ GET 3_d model , laser and laser part from robu.
 
 7_documentation -> 1 week (each code file explain, write small research paper, working viedo make and put on yt)
 
-8_fund -> 1 week - make pitch deck , pitch video , think business , etc todo see and notes see. 
+8_Grant -> 1 week - make pitch deck , pitch video , think business , etc todo see and notes see. 
+
+9_if-funded -> Gpt staragazer - read and think vision / ideate ( and be founder - and only focus to grow, and get team to build things) 
