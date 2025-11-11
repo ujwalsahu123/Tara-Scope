@@ -1,5 +1,13 @@
 // fade in and out code 
 
+
+// test out if works, if changes hai here , then also change in the 1.2_Maual_laser code.
+
+// test which faderate and laserOntime is good . 
+// and update it in 1.2_Maual_laser code.
+
+
+
 #define LASER_PIN 9   // Use a PWM-capable pin (3, 5, 6, 9, 10, or 11 on UNO)
 
 void setup() {
