@@ -25,7 +25,7 @@
 
 # #include <CheapStepper.h>
 
-# // AZ - left (false) right (false)
+# // AZ - left (false) right (true)
 # // Alt - up (false) down (true)
 
 

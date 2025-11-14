@@ -9,8 +9,8 @@
 //  but if input aya using -> injesting a Target ALT AZ value using serial monitor from a .py script.
 // then the motor move to make the Pitch equal to Alt and/ yaw equal to Az. 
 // and it does that in a loop A)B)A)B) and when reached the target then laser will on. 
-// and it will keep pointing to that target alt az until a Particular key is not pressed "s" in the terminal. 
-// and after 's' is pressed , it will again go to default mode of pointing 0,0 alt az.
+// and it will keep pointing to that target alt az until a Particular key is not pressed "0" (default)  in the terminal. 
+// and after '0' is pressed , it will again go to default mode of pointing 0,0 alt az.
 // then again if a new target alt az is given from terminal , it will point to that. 
 
 // need to write differnt functions for - 0,0 default pointing , and target alt az pointing. (since in target alt az pointing - after reaching the target - laser function is called on etc ...)

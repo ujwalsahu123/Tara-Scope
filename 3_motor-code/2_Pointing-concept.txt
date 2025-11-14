@@ -1,10 +1,17 @@
 // so we want to make a .ino code which takes alt az and moves motor to achive the RPY to ALt Az. 
-// 2 din ka kam hai . - just use the SF code & the logic part sooch lay - parallel , etc stuff ...  and mix karde 
-// and then test out karle -> use ai_guide wala code and send alt az to it . and see the error. 
+// 2 din ka kam hai . - just use the SF code & the logic part sooch lay of how pointing and motor movement ( parallel ) ,  etc stuff ...  and mix karde 
+// and then test out karle -> Run the ai_guide wala code to get the alt az and send alt az to arduino (manually) . and see the pointing accracy / error. 
 
+0. make the flowchart - after reading this full info , and old code downside.
+1. get the sf_code.ino (which geives the RPY using raw values)
+2 see below code for knowing the logic of pointing. (alt az ayga , alt_higher = alt + 0.1 , alt_lower = alt - 0.1 , ..   use delay_speed for faster and slower range )
+3 do it for 2 motors ( think how - parallel kaise hoga ?  - read - then motor1 - then motor2 - read .   or like - read - non blocking motor1, ... ? idk )
+4 also the SF part is time taking so - we can run the SF code in the Parallel, and just read the latest value and move the motors as per that. 
 
-// arduino code.txt may bhi hai ..
-// star_pointing gpt chat. 
+default function - when pressed 0 or 0 0 then it goes to 0 position. 
+// or we can do like - it points and after both motors reached - it calls the laser (fade) and then after laser turned off it goes to default mode and points - 0 , 0 
+// and after another alt az we get - it points - turns on laser - comes back to 0,0 .
+
 
 // basically - we use the SF_code.ino for getting the Rpy from sensor . and we use the Pointing_concept -> which is ek ALT Az diya jaygaa
 // and arduino has to catch it. and then range -> Alt_low , Alt_high. and then there is a logic -> read the Pitch and if pitch < Alt_low then move ALT motor clockwise until 
@@ -52,10 +59,8 @@
 // entire flow likh ------------------------------------------
 # ..... read sensor ,  parallel motor move , laser point , ......
 
-setOutputTorque(true)
-Coils stay ON → motor locks position (useful when holding a laser steady) 
-? idk to use this.  since we move motors as per sensors (consistently) and not just move some particular step and wait.
 
+contineaouly RPY print hoga in terminal so i can know . 
 
 // for parallel motor movement - use cheapstepper ka .newmove(step) function . which is a non-blocking function. 
 
@@ -80,4 +85,497 @@ so  -> loop{
 
 // so here again and again if we read the RPY after every loop then not good. 
 // insted we can make another function paralley to calculate RPY. 
-// idk if this is good or bad. need to think . since this above code is also looks good.  
+// idk if this is good or bad. need to think . since this above code is also looks good. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+old code - MPU wala ---------------------------------------------------------------------------------------
+
+
+#include <Wire.h>
+#include <MPU6050_6Axis_MotionApps20.h>
+#include <AccelStepper.h>
+
+// Motor Pins for ULN2003 driver
+#define IN1 2
+#define IN2 3
+#define IN3 4
+#define IN4 5
+
+// Target Roll Range
+#define TARGET_MIN_ROLL 0.0  // Minimum acceptable roll value
+#define TARGET_MAX_ROLL 10.0  // Maximum acceptable roll value
+
+// Speed Adjustment Variables
+#define NORMAL_SPEED 400        // Normal speed when roll is far from target range
+#define FIRST_SLOW_RANGE 20.0   // Range for slower speed (20 degrees)
+#define FIRST_SLOW_RANGE_VAL 10 // Speed value for first slow range
+#define SECOND_SLOW_RANGE 10.0  // Range for very slow speed (10 degrees)
+#define SECOND_SLOW_RANGE_VAL 2 // Speed value for second slow range
+
+// Initialize stepper motor and MPU
+AccelStepper stepper(AccelStepper::FULL4WIRE, IN1, IN3, IN2, IN4);
+MPU6050 mpu;
+
+// Global variables
+bool dmpReady = false;
+uint8_t devStatus;
+uint16_t packetSize;
+uint8_t fifoBuffer[64];
+float currentRoll = 0.0;
+
+// Initialize MPU and Stepper
+void setup() {
+  Serial.begin(115200);
+  Wire.begin();
+
+  // MPU setup
+  mpu.initialize();
+  devStatus = mpu.dmpInitialize();
+  if (devStatus == 0) {
+    mpu.setDMPEnabled(true);
+    dmpReady = true;
+    packetSize = mpu.dmpGetFIFOPacketSize();
+    Serial.println("DMP initialized successfully");
+  } else {
+    Serial.print("DMP initialization failed with code ");
+    Serial.println(devStatus);
+  }
+
+  // Stepper motor setup
+  stepper.setMaxSpeed(1000); // Set maximum motor speed
+  stepper.setSpeed(NORMAL_SPEED);     // Set initial motor speed
+}
+
+// Function to read roll from MPU6050
+void readRoll() {
+  if (!dmpReady) return;
+
+  // Check if there's data available in the FIFO buffer
+  while (mpu.getFIFOCount() >= packetSize) {
+    mpu.getFIFOBytes(fifoBuffer, packetSize);
+
+    Quaternion q;
+    VectorFloat gravity;
+    float ypr[3];  // Array to hold yaw, pitch, and roll values
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+
+    // Convert roll to degrees
+    currentRoll = ypr[2] * 180.0 / PI;  // ypr[2] is the roll value
+  }
+}
+
+// Function to adjust motor direction and speed based on roll
+void adjustMotorToRollRange() {
+  if (currentRoll < TARGET_MIN_ROLL - FIRST_SLOW_RANGE || currentRoll > TARGET_MAX_ROLL + FIRST_SLOW_RANGE) {
+    // Roll is far from target range, normal speed (400)
+    stepper.setSpeed(currentRoll < TARGET_MIN_ROLL ? NORMAL_SPEED : -NORMAL_SPEED); // Normal speed
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Normal Speed)");
+  } else if (((currentRoll >= (TARGET_MIN_ROLL - FIRST_SLOW_RANGE)) && (currentRoll < (TARGET_MIN_ROLL - SECOND_SLOW_RANGE))) ||
+             ((currentRoll > (TARGET_MAX_ROLL + SECOND_SLOW_RANGE)) && (currentRoll <= (TARGET_MAX_ROLL + FIRST_SLOW_RANGE)))) {
+    // Roll is closer to target range, medium speed (10)
+    stepper.setSpeed(currentRoll < TARGET_MIN_ROLL ? FIRST_SLOW_RANGE_VAL : -FIRST_SLOW_RANGE_VAL); // Medium speed
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Medium Speed)");
+  } else if (((currentRoll >= (TARGET_MIN_ROLL - SECOND_SLOW_RANGE)) && (currentRoll <= TARGET_MIN_ROLL))  ||
+             ((currentRoll <= (TARGET_MAX_ROLL + SECOND_SLOW_RANGE)) && (currentRoll >= TARGET_MAX_ROLL))) {
+    // Roll is very close to the target range, very slow speed (1)
+    stepper.setSpeed(currentRoll < TARGET_MIN_ROLL ? SECOND_SLOW_RANGE_VAL : -SECOND_SLOW_RANGE_VAL); // Very slow speed
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Very Slow Speed)");
+  } else {
+    // Roll is within target range, stop motor
+    stepper.setSpeed(0); // Stop
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Stop)");
+  }
+}
+
+// Main loop
+void loop() {
+  // Continuously read roll from MPU
+  readRoll();
+
+  // Adjust motor movement based on roll
+  adjustMotorToRollRange();
+
+  // Run the motor at the determined speed
+  stepper.runSpeed();
+}
+
+
+
+---------------------------------------------------------------------------------------
+ok so in the above code i had use mpu sensor , and fastaccel code , but  i next time i want to use some other sensor , but this concept of the code is very important . so can you please remove all the mpu sensor part . and instead you can leave a comment like get yaw data .... etc . 
+
+(so here , its the logic code , wihout the mpu par )
+
+#include <AccelStepper.h>
+
+// Motor Pins for ULN2003 driver
+#define IN1 2
+#define IN2 3
+#define IN3 4
+#define IN4 5
+
+// Target Roll Range
+#define TARGET_MIN_ROLL 0.0  // Minimum acceptable roll value
+#define TARGET_MAX_ROLL 10.0 // Maximum acceptable roll value
+
+// Speed Adjustment Variables
+#define NORMAL_SPEED 400        // Normal speed when roll is far from target range
+#define FIRST_SLOW_RANGE 20.0   // Range for slower speed (20 degrees)
+#define FIRST_SLOW_RANGE_VAL 10 // Speed value for first slow range
+#define SECOND_SLOW_RANGE 10.0  // Range for very slow speed (10 degrees)
+#define SECOND_SLOW_RANGE_VAL 2 // Speed value for second slow range
+
+// Initialize stepper motor
+AccelStepper stepper(AccelStepper::FULL4WIRE, IN1, IN3, IN2, IN4);
+
+// Global variables
+float currentRoll = 0.0; // Variable to store the roll value
+
+// Initialize Stepper
+void setup() {
+  Serial.begin(115200);
+
+  // Stepper motor setup
+  stepper.setMaxSpeed(1000); // Set maximum motor speed
+  stepper.setSpeed(NORMAL_SPEED); // Set initial motor speed
+
+  Serial.println("System initialized. Waiting for sensor data...");
+}
+
+// Function to update the roll value
+void updateRoll() {
+  // Replace the following line with the logic to get roll (or yaw) data from your sensor
+  // Example: currentRoll = getYawFromSensor(); or currentRoll = readSensorRoll();
+  // Ensure the roll value is in degrees.
+  
+  // Placeholder for testing
+  currentRoll = random(-30, 30); // Replace with actual sensor logic
+}
+
+// Function to adjust motor direction and speed based on roll
+void adjustMotorToRollRange() {
+  if (currentRoll < TARGET_MIN_ROLL - FIRST_SLOW_RANGE || currentRoll > TARGET_MAX_ROLL + FIRST_SLOW_RANGE) {
+    // Roll is far from target range, normal speed
+    stepper.setSpeed(currentRoll < TARGET_MIN_ROLL ? NORMAL_SPEED : -NORMAL_SPEED);
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Normal Speed)");
+  } else if (((currentRoll >= (TARGET_MIN_ROLL - FIRST_SLOW_RANGE)) && (currentRoll < (TARGET_MIN_ROLL - SECOND_SLOW_RANGE))) ||
+             ((currentRoll > (TARGET_MAX_ROLL + SECOND_SLOW_RANGE)) && (currentRoll <= (TARGET_MAX_ROLL + FIRST_SLOW_RANGE)))) {
+    // Roll is closer to target range, medium speed
+    stepper.setSpeed(currentRoll < TARGET_MIN_ROLL ? FIRST_SLOW_RANGE_VAL : -FIRST_SLOW_RANGE_VAL);
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Medium Speed)");
+  } else if (((currentRoll >= (TARGET_MIN_ROLL - SECOND_SLOW_RANGE)) && (currentRoll <= TARGET_MIN_ROLL))  ||
+             ((currentRoll <= (TARGET_MAX_ROLL + SECOND_SLOW_RANGE)) && (currentRoll >= TARGET_MAX_ROLL))) {
+    // Roll is very close to the target range, very slow speed
+    stepper.setSpeed(currentRoll < TARGET_MIN_ROLL ? SECOND_SLOW_RANGE_VAL : -SECOND_SLOW_RANGE_VAL);
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Very Slow Speed)");
+  } else {
+    // Roll is within target range, stop motor
+    stepper.setSpeed(0);
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Stop)");
+  }
+}
+
+// Main loop
+void loop() {
+  // Continuously update roll value from the sensor
+  updateRoll();
+
+  // Adjust motor movement based on roll
+  adjustMotorToRollRange();
+
+  // Run the motor at the determined speed
+  stepper.runSpeed();
+}
+
+---------------------------------------------------------------------------------------
+ok now can you make this same conectp and code for cheapstepper library instead of fastaccell
+
+(so now gpt gave the code using cheapstepper.) but the logic can be imporved
+instead of using the Rpm(speed) , we can move 1 step at a time and we will play with the delay speed . 
+to make the speed - fast / slow . 
+
+
+#include <CheapStepper.h>
+
+// Motor Pins for ULN2003 driver
+#define IN1 2
+#define IN2 3
+#define IN3 4
+#define IN4 5
+
+// Target Roll Range
+#define TARGET_MIN_ROLL 0.0  // Minimum acceptable roll value
+#define TARGET_MAX_ROLL 10.0 // Maximum acceptable roll value
+
+// Speed Adjustment Variables
+#define NORMAL_DELAY 2        // Normal speed delay (lower value = faster speed)
+#define FIRST_SLOW_DELAY 10   // Medium speed delay
+#define SECOND_SLOW_DELAY 30  // Very slow speed delay
+
+// Initialize stepper motor
+CheapStepper stepper(IN1, IN2, IN3, IN4);
+
+// Global variables
+float currentRoll = 0.0; // Variable to store the roll value
+bool motorMoving = false;
+
+// Initialize Stepper
+void setup() {
+  Serial.begin(115200);
+
+  // Stepper motor setup
+  stepper.setRpm(15); // Default RPM (can be adjusted dynamically later)
+
+  Serial.println("System initialized. Waiting for sensor data...");
+}
+
+// Function to update the roll value
+void updateRoll() {
+  // Replace the following line with the logic to get roll (or yaw) data from your sensor
+  // Example: currentRoll = getYawFromSensor(); or currentRoll = readSensorRoll();
+  // Ensure the roll value is in degrees.
+
+  // Placeholder for testing
+  currentRoll = random(-30, 30); // Replace with actual sensor logic
+}
+
+// Function to adjust motor direction and speed based on roll
+void adjustMotorToRollRange() {
+  if (currentRoll < TARGET_MIN_ROLL - 20.0 || currentRoll > TARGET_MAX_ROLL + 20.0) {
+    // Roll is far from target range, normal speed
+    stepper.setRpm(30); // Set higher RPM for faster movement
+    motorMoving = true;
+    if (currentRoll < TARGET_MIN_ROLL) {
+      stepper.moveDegreesCW(5); // Move clockwise
+    } else {
+      stepper.moveDegreesCCW(5); // Move counterclockwise
+    }
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Normal Speed)");
+  } else if (((currentRoll >= (TARGET_MIN_ROLL - 20.0)) && (currentRoll < (TARGET_MIN_ROLL - 10.0))) ||
+             ((currentRoll > (TARGET_MAX_ROLL + 10.0)) && (currentRoll <= (TARGET_MAX_ROLL + 20.0)))) {
+    // Roll is closer to target range, medium speed
+    stepper.setRpm(10); // Set medium RPM for slower movement
+    motorMoving = true;
+    if (currentRoll < TARGET_MIN_ROLL) {
+      stepper.moveDegreesCW(1); // Move clockwise slowly
+    } else {
+      stepper.moveDegreesCCW(1); // Move counterclockwise slowly
+    }
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Medium Speed)");
+  } else if (((currentRoll >= (TARGET_MIN_ROLL - 10.0)) && (currentRoll <= TARGET_MIN_ROLL)) ||
+             ((currentRoll <= (TARGET_MAX_ROLL + 10.0)) && (currentRoll >= TARGET_MAX_ROLL))) {
+    // Roll is very close to the target range, very slow speed
+    stepper.setRpm(5); // Set very slow RPM for precise movement
+    motorMoving = true;
+    if (currentRoll < TARGET_MIN_ROLL) {
+      stepper.moveStepsCW(1); // Very slow clockwise movement
+    } else {
+      stepper.moveStepsCCW(1); // Very slow counterclockwise movement
+    }
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Very Slow Speed)");
+  } else {
+    // Roll is within target range, stop motor
+    motorMoving = false;
+    Serial.print("Roll: ");
+    Serial.print(currentRoll);
+    Serial.println(" (Stop)");
+  }
+}
+
+// Main loop
+void loop() {
+  // Continuously update roll value from the sensor
+  updateRoll();
+
+  // Adjust motor movement based on roll
+  adjustMotorToRollRange();
+
+  // Allow the motor to complete the current step if moving
+  if (motorMoving) {
+    stepper.run();
+  }
+}
+
+
+---------------------------------------------------------------------------------------
+
+same as the above code - but for 2 motors - pitch and yaw . 
+
+#include <CheapStepper.h>
+
+// Motor Pins for Pitch (ULN2003 driver)
+#define PITCH_IN1 2
+#define PITCH_IN2 3
+#define PITCH_IN3 4
+#define PITCH_IN4 5
+
+// Motor Pins for Yaw (ULN2003 driver)
+#define YAW_IN1 6
+#define YAW_IN2 7
+#define YAW_IN3 8
+#define YAW_IN4 9
+
+// Target Ranges
+#define TARGET_MIN_PITCH 0.0  // Minimum acceptable pitch value
+#define TARGET_MAX_PITCH 10.0 // Maximum acceptable pitch value
+#define TARGET_MIN_YAW 0.0    // Minimum acceptable yaw value
+#define TARGET_MAX_YAW 10.0   // Maximum acceptable yaw value
+
+// Initialize stepper motors
+CheapStepper pitchMotor(PITCH_IN1, PITCH_IN2, PITCH_IN3, PITCH_IN4);
+CheapStepper yawMotor(YAW_IN1, YAW_IN2, YAW_IN3, YAW_IN4);
+
+// Global variables for sensor data
+float currentPitch = 0.0;
+float currentYaw = 0.0;
+
+// Initialize Stepper
+void setup() {
+  Serial.begin(115200);
+
+  // Motor setup
+  pitchMotor.setRpm(15); // Default RPM for pitch motor
+  yawMotor.setRpm(15);   // Default RPM for yaw motor
+
+  Serial.println("System initialized. Waiting for sensor data...");
+}
+
+// Function to update pitch and yaw values
+void updatePitchAndYaw() {
+  // Replace these lines with the logic to get pitch and yaw data from your sensor
+  // Example: currentPitch = getPitchFromSensor(); currentYaw = getYawFromSensor();
+
+  // Placeholder for testing
+  currentPitch = random(-30, 30); // Replace with actual sensor logic
+  currentYaw = random(-30, 30);   // Replace with actual sensor logic
+}
+
+// Function to adjust pitch motor
+void adjustPitchMotor() {
+  if (currentPitch < TARGET_MIN_PITCH - 20.0 || currentPitch > TARGET_MAX_PITCH + 20.0) {
+    // Far from target range, normal speed
+    pitchMotor.setRpm(30);
+    if (currentPitch < TARGET_MIN_PITCH) {
+      pitchMotor.moveDegreesCW(5); // Move clockwise
+    } else {
+      pitchMotor.moveDegreesCCW(5); // Move counterclockwise
+    }
+    Serial.print("Pitch: ");
+    Serial.print(currentPitch);
+    Serial.println(" (Normal Speed)");
+  } else if (abs(currentPitch - TARGET_MIN_PITCH) <= 10.0 || abs(currentPitch - TARGET_MAX_PITCH) <= 10.0) {
+    // Close to target range, slow speed
+    pitchMotor.setRpm(5);
+    if (currentPitch < TARGET_MIN_PITCH) {
+      pitchMotor.moveStepsCW(1); // Move very slowly clockwise
+    } else {
+      pitchMotor.moveStepsCCW(1); // Move very slowly counterclockwise
+    }
+    Serial.print("Pitch: ");
+    Serial.print(currentPitch);
+    Serial.println(" (Slow Speed)");
+  } else {
+    // Within range, stop motor
+    Serial.print("Pitch: ");
+    Serial.print(currentPitch);
+    Serial.println(" (Stop)");
+  }
+}
+
+// Function to adjust yaw motor
+void adjustYawMotor() {
+  if (currentYaw < TARGET_MIN_YAW - 20.0 || currentYaw > TARGET_MAX_YAW + 20.0) {
+    // Far from target range, normal speed
+    yawMotor.setRpm(30);
+    if (currentYaw < TARGET_MIN_YAW) {
+      yawMotor.moveDegreesCW(5); // Move clockwise
+    } else {
+      yawMotor.moveDegreesCCW(5); // Move counterclockwise
+    }
+    Serial.print("Yaw: ");
+    Serial.print(currentYaw);
+    Serial.println(" (Normal Speed)");
+  } else if (abs(currentYaw - TARGET_MIN_YAW) <= 10.0 || abs(currentYaw - TARGET_MAX_YAW) <= 10.0) {
+    // Close to target range, slow speed
+    yawMotor.setRpm(5);
+    if (currentYaw < TARGET_MIN_YAW) {
+      yawMotor.moveStepsCW(1); // Move very slowly clockwise
+    } else {
+      yawMotor.moveStepsCCW(1); // Move very slowly counterclockwise
+    }
+    Serial.print("Yaw: ");
+    Serial.print(currentYaw);
+    Serial.println(" (Slow Speed)");
+  } else {
+    // Within range, stop motor
+    Serial.print("Yaw: ");
+    Serial.print(currentYaw);
+    Serial.println(" (Stop)");
+  }
+}
+
+// Main loop
+void loop() {
+  // Continuously update pitch and yaw values
+  updatePitchAndYaw();
+
+  // Adjust motor movement based on pitch and yaw
+  adjustPitchMotor();
+  adjustYawMotor();
+}
+
+---------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
