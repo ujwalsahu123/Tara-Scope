@@ -14,3 +14,4 @@
 # and after pressing "s" - it will go to 0,0 position.
 # and after pressing "s" - terminal will again show all the list of stars above horizon.
 
+# see the sheet image , in this folder flow.jpg  for the flow .  ( and look at the suntracker sheets i made.)

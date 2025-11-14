@@ -1,6 +1,6 @@
-GET 3_d model , laser and laser part from robu. 
+GET 3d-model , laser and laser part from robu. 
 
-1_calibration -> 1 week (sensor manaul read, yellow_file read, calib code read, understand all, mag.py & mag.ino code write , gyro calib, acc think what to do- my previous reading or new reading using motors.)
+1_calibration -> 1 week (sensor manaul read, My yellow_file read, calib code read, understand all, mag.py & mag.ino code write for motor calib (see - calib using motor gpt) , gyro calib, acc think what to do- my previous reading or new reading using motors.)
 
 2_sensor-fusion -> 1 week (full see and understand it, watch videos , use cpp code not python, since slow, write sf.ino code which reads raw values and gives nice RPY. )
 
@@ -26,3 +26,4 @@ GET 3_d model , laser and laser part from robu.
 8_Grant -> 1 week - make pitch deck , pitch video , think business , etc todo see and notes see. 
 
 9_if-funded -> Gpt staragazer - read and think vision / ideate ( and be founder - and only focus to grow, and get team to build things) 
+
