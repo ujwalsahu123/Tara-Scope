@@ -2,6 +2,12 @@
 #  then calculate the difference between the ALT AZ of the star and the Pitch Yaw of the sensor.
 #  the store the averge difference in a offset.txt file
 
+
+# go and learn how does - 3 star allignment work . - study stellector - how he did that . 
+# and also see that on google - and gpt how does that work. 
+# its not that simple - ki sirf calcuate the difference. (since the globe -
+# at at 0 degree alt the az moves 360 degree , but at 90 degree alt - the az is fixed . so the difference calculation is not that simple.)
+
 #  in this code: there is a loop and it runs 3/5 times ( thus 3/5 star calib)
 #  in the loop : we need to first select a star from the list - using terminal
 # then voo star ka data fetch hoga. 
