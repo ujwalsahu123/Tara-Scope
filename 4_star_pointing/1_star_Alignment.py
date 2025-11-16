@@ -45,3 +45,8 @@
 
 # cannot do like - manually ALT AZ stellerium ya kahi say uthaya and then do differnce with that ALT AZ and pitch yaw.
 # need to use ai-guide wala code which used library , since bad may bhi we will use this teachnique only. - when pointing the star so abhi hee uss hisab say star_offset caluclation karna hoga.
+
+
+
+# also ek bar run the RPY_sf.ino code and motor move when i press - and place the sensor near the motor . and see if when motor move - then does it effect the IMU readings. 
+# offcourse the motors will cause some distubance in mag , but while the motor runs - does it cause distrubance - voo bhi pata krna hoga. 
