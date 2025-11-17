@@ -12,6 +12,8 @@ Its small , cheap and can unlock the universe for you .
 
 An automatic stargazing device is a tool that helps you easily find and track stars and other celestial objects. It uses motors to move a laser pointer or telescope to the exact position of a star based on your location and the current time. Sensors on the device ensure accurate pointing and tracking, so you can enjoy a clear view of the night sky without manually searching for objects.
 
+IDEA DEMO : https://youtube.com/shorts/w3IwdKpvQVA?si=-Li4YI_Lc3XkKAI4   https://youtu.be/OUAh3qONevA?si=fbP-pA_Mn6YwoY1l      
+
 i will try to post the updates (as files) . 
 
 
