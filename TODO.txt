@@ -13,7 +13,12 @@ GET 3d-model , laser and laser part from robu.
                     1_star_calib - use the 0_basic_pointing code and controlled-by-button code to get the offset.
                     2_use_offset - same as 0_basic_pointing
                     4_main.py 
-                    5_debug - rethink and make the pointing more accurate
+                    5_debug - rethink and make the pointing more accurate -> entire game of pointing Accuracy depends on -> 
+IMU sensor Accuracy (use better sensors, better calib),
+Get a Minimum Step Angle Motor,
+Accurate values (ALT AZ) of a celestial object,
+Star alignment calibration.
+
 
 5_destop app -> max 1 week
 
