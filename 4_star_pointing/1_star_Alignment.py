@@ -50,3 +50,7 @@
 
 # also ek bar run the RPY_sf.ino code and motor move when i press - and place the sensor near the motor . and see if when motor move - then does it effect the IMU readings. 
 # offcourse the motors will cause some distubance in mag , but while the motor runs - does it cause distrubance - voo bhi pata krna hoga. 
+
+
+# 3 star alignment is not that simple - ki bas you calculat the differnce , since at different altitudes - the azimuth behaves differently.
+# so need to study more about how 3 star alignment works .
