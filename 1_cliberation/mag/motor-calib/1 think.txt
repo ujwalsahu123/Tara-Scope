@@ -6,4 +6,6 @@ need to think on this . since - the seen is - when motor move -
 - then it moves 1 - 1 step so jerky - boo thik kar. (1k reading is fine - 2 min)
 - when motor moves then does it cause Electro Magnetic field - which can disrupt the mag readings. - run a .ino code - where it reads the mag values and also runs motor when i press a button - then place the sensor near the the mtors and run the motor to see if it effect the readings (so need to break for 0.100 ms then take reding then break 0.01ms then motor move)
 - if calib using motor then the seen is -> ex - sensor is facing north then it reads left may magnetic field hai, then senor points southt then also it sees left may magnetic filed , and same for altitude also. 
-- so idk but does this effect the calib seen ?  ( for sensor the motor is not at a static posi , )
+- so idk but does this effect the calib seen ?  ( for sensor the motor is not at a static posi which means  , )
+
+- doing both - motor and manaul calib after setup -> is not preffered , (since - first it think left may hai magnetic field then it think ...)but idk - so think. 
