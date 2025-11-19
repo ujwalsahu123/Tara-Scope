@@ -9,6 +9,8 @@ at zeinith the sensor ALT readings go crazy. so point the laser to zeinith at fl
 2. the ALT motors moves 180 degree, so that for stars which are very closer to zenith - starA alt 85 , az 0 . starB alt 80 , az 180 .  ( so if we keep the alt range of 90 deg then the AZ motor has to travel long distance (even if it finds the shorter part by contineous rotation) and then alt motor moves by 5  degree (from 85 to 80) .  but if we keep the alt range of 180 degree then the the alt motor moves 15 deg (from 85 to 100) , and when the alt motor goes 90+ then the AZ shifts by 180. and then the Az motor moves.  so this technique lets up move quicker for the zenith stars. ) also this is hard to implement. 
 3 keeping the sensor alt 0 at zeinith . since - most of the stars are at zeinith and a very few at the horizon . ( so when we move the sensors to alt around 80 , 90 , 90 + then it dosent give a good reading, so we can add a constant +90 deg, after calculating the alt . so that the when sensor is flat on surface -> 0 deg alt then it will show 90 deg alt.) so this can help us to point accuratly at zeinith and can go 90+ deg easily as mentioned in ideas 2.  and when pointing we just simply also have to add +90 to the Target_alt variable. 
 
+
+
 so i need to more think on this . and visualize it.  
 - contineous motion of AZ and fining shorter path. 
 - making alt motor 180 range , and need to think how it does 90+ and flips the AZ jump by 180. so that shorter path. 
@@ -16,3 +18,7 @@ so i need to more think on this . and visualize it.
 other ex- we found from idea 2 that moving the alt motor 90+ is shorter part so we flip the AZ. in this case - we need to do -90 int he target_alt... ... i am not clear and need to think on this. 
 
 all these 3 things are super imp and these techniques can be a gamechanger. since no one else have thought applying this techniques. not even - website one , not even stellector . so need to work on it. and need to first clear the concept that how this will work. 
+
+
+
+-later : also can add more multiple sensors (ex- perpendicular place 90deg par.) (orinetation -> 0deg,90deg  L shape //or// 45deg,-45deg A shape)
