@@ -3,6 +3,7 @@ GET 3d-model , laser and laser part from robu.
 1_calibration -> 1 week (sensor manaul read, My yellow_file read, calib code read, understand all, mag.py & mag.ino code write for motor calib (see - calib using motor gpt) , gyro calib, acc think what to do- my previous reading or new reading using motors.)
 
 2_sensor-fusion -> 1 week (full see and understand it, watch videos , use cpp code not python, since slow, write sf.ino code which reads raw values and gives nice RPY. )
+// try esp32 if still slow RPY output.
 
 3_laser -> 2 days (setup kar and check if it works)
 
@@ -18,6 +19,10 @@ IMU sensor Accuracy (use better sensors, better calib),
 Get a Minimum Step Angle Motor,
 Accurate values (ALT AZ) of a celestial object,
 Star alignment calibration.
+
+
+// optional - 
+// also need to study esp32 wrover , and how to share work with it - connection with sensors, i2c / uart , wireless seen - (Bluetooth / wifi) - (like can i share my code wirelessly or what ? , also using it for controlling -> sending commands , reading data/ values , etc )
 
 
 5_destop app -> max 1 week

@@ -47,7 +47,7 @@ import time
 import serial
 import keyboard  # if this is troublesome on Linux, I can give a pynput version
 
-PORT = "COM3"      # <-- change this (e.g., "COM3", "/dev/ttyACM0", "/dev/ttyUSB0")
+PORT = "COM7"      # <-- change this (e.g., "COM3", "/dev/ttyACM0", "/dev/ttyUSB0")
 BAUD = 115200
 
 ser = serial.Serial(PORT, BAUD, timeout=0.2)

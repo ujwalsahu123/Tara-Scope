@@ -42,7 +42,7 @@ void fadeLaser(int fadeRate, int laserOnTime) {
 }
 
 void loop() {
-  fadeLaser(10, 2000);  // (faderate , laserOnTime) 
+  fadeLaser(12,600);  // (faderate , laserOnTime) 
   
   delay(2000); 
   //no need to write this delay in the main motor pointing code. just write all of the above code & fucntion & function call
