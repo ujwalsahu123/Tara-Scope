@@ -1,11 +1,9 @@
-GET 3d-model , laser and laser part from robu. 
-
 1_calibration -> 1 week (sensor manaul read, My yellow_file read, calib code read, understand all, mag.py & mag.ino code write for motor calib (see - calib using motor gpt) , gyro calib, acc think what to do- my previous reading or new reading using motors.)
 
 2_sensor-fusion -> 1 week (full see and understand it, watch videos , use cpp code not python, since slow, write sf.ino code which reads raw values and gives nice RPY. )
 // try esp32 if still slow RPY output.
 
-3_laser -> 2 days (setup kar and check if it works)
+3_laser -> Done
 
 3_motor-code -> 2 days ( run the 1_controlled.py code with laser , then write the 3_full-motor-code.ino which is basically mix of Sf.ino code , Motor pointing logic , and laserfade function. )
     

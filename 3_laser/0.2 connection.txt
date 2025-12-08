@@ -1,0 +1,10 @@
+there are many ways to make the LASER DRIVER
+
+some of the ways are : 
+
+... mosfet is ... 
+... Step down needed (when external power supply 5v to 3v for laser)
+
+
+so the best way is ..... (tell all the ways to gpt and gemini , and ask which is best and is there something better)
+

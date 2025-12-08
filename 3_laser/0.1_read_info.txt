@@ -1,5 +1,5 @@
 // 1) define the pin number 
-// #define LASER_PIN 7
+// #define LASER_PIN 3, 5, 6, 9, 10, 11 (analog / PWM) 2, 3, 4, 7, 8, 12, 13 (digital)
 
 // 2) in setup - set the pin mode to output . and set it low to start with laser off
 // pinMode(LASER_PIN, OUTPUT);
@@ -13,7 +13,13 @@
 
 
 
+// the PWM pins quickly turns the current on and off
+// PWM doesn’t actually change the current level — the current is always 0% or 100%. It simply turns the power ON and OFF very quickly (hundreds of times per second), and the ratio of ON vs OFF time makes our eyes perceive different brightness levels.
+// 20% duty -> 20% time on , 80% time off 
 
+
+
+-----------------------------------------------INFO----------------------------------------------------
 
 
 UNO vs ESP  - digital pins to use . 

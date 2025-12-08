@@ -3,15 +3,10 @@
 
 
 
-# test out if works, if changes hai here , then also change in the 1.2_Maual_laser code.
-
-
-
-
-# ---------------------------------------------------------------------------------
-
 
 #arduino code
+
+# --------------------------------------------------------------------------------
 
 # #define LASER_PIN 7        // D4184 PWM/SIG input
 # bool laserOn = false;
@@ -36,7 +31,7 @@
 #       Serial.println(laserOn ? "ON" : "OFF");  // optional feedback
 #     }
 #   }
-# }
+# } 
 
 
 # ------------------------------------------

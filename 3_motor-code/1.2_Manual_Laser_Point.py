@@ -57,8 +57,8 @@
 # }
 
 # // -------- Laser fade - --------
-# const int FADE_RATE_MS = 10;      // delay between fade steps
-# const int LASER_ON_TIME_MS = 1000; // how long laser stays ON at full brightness
+# const int FADE_RATE_MS = 12;      // delay between fade steps
+# const int LASER_ON_TIME_MS = 600; // how long laser stays ON at full brightness
 
 # void fadeLaser(int fadeRate, int laserOnTime) {
 #   Serial.println("Laser fade: starting");
