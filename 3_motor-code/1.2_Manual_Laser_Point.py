@@ -30,8 +30,8 @@
 
 
 # // -------- Motors --------
-# CheapStepper motorA(8, 9, 10, 11);   // Azimuth (ULN2003 IN1–IN4)
 # CheapStepper motorB(4, 5, 6, 7);     // Altitude (ULN2003 IN1–IN4)
+# CheapStepper motorA(8, 9, 10, 11);   // Azimuth (ULN2003 IN1–IN4)
 
 # const long STEPS_PER_REV = 4076;
 # const int RPM = 10;  // base RPM for normal moves
@@ -41,8 +41,8 @@
 
 
 # // ===== Shape settings #################################################################################
-# const int RADIUS_IN_STEPS = 20;      // <- radius (steps) // keep 20 . below 10 dosent work
-# const int DELAY_MS = 50;       // <- speed (ms per iteration) // keep 50 . 
+# const int RADIUS_IN_STEPS = 5;      // <- radius (steps) // keep 20 . below 10 dosent work
+# const int DELAY_MS = 200;       // <- speed (ms per iteration) // keep 50 . 
 # // both are inversely proportional - so if you increase the Radius then decrease the delay ex - 200 Radius , 5 delay.
 # // and if you want to decrease the Radius then decrease the delay. ex - 15 Radius , 60 delay.
 # // ######################################################################################################
@@ -51,14 +51,14 @@
 # #define LASER_PIN 3   // PWM pin we can use this pin for both - digitalWrite and analogWrite
 # bool laserOn = false; 
 
-# void setLaser(bool on) {
+# void setLaser(bool on) { 
 #   laserOn = on;
 #   digitalWrite(LASER_PIN, on ? HIGH : LOW);
 # }
 
 # // -------- Laser fade - --------
-# const int FADE_RATE_MS = 12;      // delay between fade steps
-# const int LASER_ON_TIME_MS = 600; // how long laser stays ON at full brightness
+# const int FADE_RATE_MS = 15;      // delay between fade steps
+# const int LASER_ON_TIME_MS = 200; // how long laser stays ON at full brightness
 
 # void fadeLaser(int fadeRate, int laserOnTime) {
 #   Serial.println("Laser fade: starting");
@@ -310,7 +310,7 @@
 #       // ===== laser toggle (space) =====
 #       case 'T': setLaser(!laserOn);Serial.println(laserOn ? "LASER ON" : "LASER OFF"); break;
 
-#       // ===== fade laser (f) =====
+#       // ===== fade laser (f) =====  
 #       case 'f': fadeLaser(FADE_RATE_MS, LASER_ON_TIME_MS); break;
 
 #       // shapes

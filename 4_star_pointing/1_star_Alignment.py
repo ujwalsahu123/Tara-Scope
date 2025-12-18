@@ -2,6 +2,9 @@
 #  then calculate the difference between the ALT AZ of the star and the Pitch Yaw of the sensor.
 #  the store the averge difference in a offset.txt file
 
+# take a day out and read how the stellector did the 3 star alignment (read the paper, and then read the code)
+# also learn more about how 3 star alignment works. - since its not that simple as just calculating the difference.
+# read on google and yt. and ask gpt also.
 
 # go and learn how does - 3 star allignment work . - study stellector - how he did that . 
 # and also see that on google - and gpt how does that work. 

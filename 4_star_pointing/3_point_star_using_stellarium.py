@@ -1,6 +1,10 @@
 # \first - wite the full-motor-code - which takes a alt az value and moves the motors until the pitch yaw reaches that alt az values.
 # and yaha say bas we send the alt az values. 
 
+# also - direct values bhi day sakte hai to arduino - directly from stellarium
+# yaa fhir - we can give it after applying offset - which we calulate from 3/5 star calibration.
+# both test kar. 
+
 # flow :
 # Here , we select a object in sterellium and then it send the RA DEC , ALT AZ , Name of that object . 
 # python code catches it- and using its Name / RA DEC / ALT AZ -> it calcualte the ALT AZ of that object (using libaries (see ai_guide_app.py code) for calculateing ALT AZ of a star )

@@ -1,3 +1,4 @@
 study esp32 wrover , and how to share code with it - connection with sensors, i2c / uart , wireless seen - (Bluetooth / wifi) - (like can i share my code wirelessly or what ? , also using it for controlling -> sending commands , reading data/ values , etc )
 
 also i think later i need to convert all the other code file - for as per esp32
+
