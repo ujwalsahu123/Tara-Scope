@@ -1,6 +1,6 @@
-1_calibration -> 1 week (sensor ka manual pdf read & sensor test kar.
+1_calibration -> 1 week (sensor ka manual pdf read & code understand. 
                         My yellow_file read, Calib-YT-Guy video watch, calib code read, understand all, acc and gyro pehla full done kar,gyro calib, acc think what to do- my previous reading or new reading using motors,
-                        then mag.py & mag.ino code write for motor calib (see - calib using motor gpt) - last time the speed , etc was the issue - know more about it. also check how much influence the motor does on mag reading.
+                        write simple mag.py & mag.ino code for motor calib (see - calib using motor gpt) - last time the speed , etc was the issue - know more about it. also check how much influence the motor does on mag reading (by - motor contineously run karega, then sensor dur pas laa (run the Yaw wala code) , and see kitna degree farak padege)
                         so learn should it take contineous readings or stop and wait for 100ms to 1 sec and then take reading, since viration is also there after motor movement.  or if there is no impact of the motor - then parallely - move motor at x speed and take radings at y speed.)
 
 2_sensor-fusion -> 1 week (full see and understand it, watch videos , use cpp code not python, since slow, write sf.ino code which reads raw values and gives nice RPY. )
@@ -8,7 +8,7 @@
 
 3_laser -> Done
 
-3_motor-code -> 3 days (easy) ( 2_pointing_concept par work, then write the 3_full-motor-code.ino which is basically mix of Sf.ino code ,  2_pointing_concept logic , and 1.2_manual_laser_pointing . )
+3_motor-code -> 3 days (easy) ( 2_pointing_concept par work, then write the 3_full-motor-code.ino which is basically mix of Sf.ino code ,  2_pointing_concept logic , and 1.2_manual_laser_pointing . )  checkout the arduino.txt file it has some logic.
 
 4_star - pointing  -> 1 week (easy not a big deal, - 0 , 3 , 4 are easy . the main thing here is 1_star_calib and 2_use_offset - and this needs to be tested , iterated again and debugged- since yeahi say accuracy ayga . )
 

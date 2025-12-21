@@ -26,6 +26,10 @@ default function - when pressed 0 or 0 0 then it goes to 0 position.
 
 
 
+Checkout the Arduino.txt file - it has some logic. ..... *******************
+
+
+
 // also need to think when will the laser be on -> after target reached , or when pressed space.
 
 

@@ -1417,7 +1417,7 @@ void loop()
 ***************************************************
 
 magnetometer code  
-(0 to 360 , 1 floating value good , 0->360 transition takes 2,3 second to transition)
+(degree may value -> 0 to 360 , 1 floating value good , 0->360 transition takes 2,3 second to transition)
 
 
 #include <Wire.h>

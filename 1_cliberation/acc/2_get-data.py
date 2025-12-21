@@ -1,7 +1,10 @@
-# this code get the lsb data and then stores it into txt file .
-# it also scales from lsb to g . since scaling to g is imp . 
+# this code Reads the output data (lsb data) from the arduino and then stores it into txt file .
+# it also scales from lsb to g . since scaling to g is imp ( sf wants acc in g) 
 # since magneto only takes g unit data and then give offset . 
 # and we need offset to get calib , so scale lsb to g .
+
+
+
 
 import os
 import math
@@ -10,7 +13,7 @@ import serial
 
 # Configuration
 MAX_MEAS = 2000  # Maximum number of measurements
-AVG_MEAS = 25   # Number of samples to average for one reading
+AVG_MEAS = 25   # Number of samples to average for one reading // basically when collecting one data point - we dont just store 1 value , we actually take 25 readings and average them to get 1 data point.
 SER_PORT = 'COM6'  # Update to your Arduino's COM port (e.g., 'COM4' on Windows, '/dev/ttyUSB0' on Linux)
 SER_BAUD = 115200  # Baud rate for serial communication
 FILENAME = os.path.join(os.getcwd(), 'acc/acceldata_ism.txt')  # File to save accelerometer data
@@ -47,14 +50,21 @@ class SerialPort:
         self.ser.close()
 
 # Function to record a single data point (averaged over AVG_MEAS readings)
-def record_data_point(ser: SerialPort) -> tuple:
+def record_data_point(ser: SerialPort) -> tuple:    
     ax, ay, az = 0.0, 0.0, 0.0
+
+##### i think its better to do average of lsb and then convert to g or mg using scale factor (0.061 , etc)
+##### and not really first converting to mg or g and then averaging. 
+#### since its the same thing - averaging first and then scaling or scaling first and then averaging - both are same mathematically.
+#### ex - 1+2+3 /3  = 2 * (10) = 20 . and 1*10 + 2*10 +3*10 /3 = 20 . both are same.
+#### but averaging first and then scaling is better since - we only scale 1 time - so faster.
+
     for _ in range(AVG_MEAS):
         try:
             data = ser.read().split(',')
-            ax_now = (int(data[0])) * 0.00006103515625
-            ay_now = (int(data[1])) * 0.00006103515625
-            az_now = (int(data[2])) * 0.00006103515625
+            ax_now = (int(data[0])) # * 0.00006103515625 # we will not scale here - we will scale after averaging
+            ay_now = (int(data[1])) # * 0.00006103515625
+            az_now = (int(data[2])) # * 0.00006103515625
         except (ValueError, IndexError) as e:
             print(f"[ERROR]: Data parsing error: {e}")
             ser.close()
@@ -63,7 +73,11 @@ def record_data_point(ser: SerialPort) -> tuple:
         ay += ay_now
         az += az_now
 
-    return ax / AVG_MEAS, ay / AVG_MEAS, az / AVG_MEAS
+    # after loop ends
+    ax = (ax / AVG_MEAS) * 0.00006103515625  # average out, and Convert to g
+    ay = (ay / AVG_MEAS) * 0.00006103515625 
+    az = (az / AVG_MEAS) * 0.00006103515625  
+    return ax , ay , az 
 
 # Function to save the data to a file
 def save_data_to_file(data: list, filename: str, delimiter: str = '\t'):
