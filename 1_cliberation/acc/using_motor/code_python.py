@@ -1,10 +1,21 @@
+# here it just simply reads the arduino averaged values and then simply scale it to g . and store it. 
+# 5 orientations is enough ( | straight , 45 deg / , -45 deg \ , 90 deg -- ,  sideways up )
+# then use magneto to get offset then check the 3_plot , 4_magnitude , 5_live magnitude
+
+# close the data.txt tab - then read . verna it dosent store the values . 
+# also be inside the current folder in termainl and then run the code 
+# cd /get_data_using_motor then python code_python.py
+# dont do python /get_data_using_motor/python.py
+# can see the plot and magnitude using the plot and magnitude codefile.
+
+
 import serial
 import time
 import os
 
 PORT = 'COM7'          # change if needed
 BAUD = 115200
-OUTFILE = 'motor_read.txt'
+OUTFILE = 'Data.txt'
 SCALE = 0.00006103515625  # LSB → g
 
 ser = serial.Serial(PORT, BAUD, timeout=1)

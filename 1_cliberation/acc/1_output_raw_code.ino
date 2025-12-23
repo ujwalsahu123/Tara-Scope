@@ -1,3 +1,6 @@
+// prints raw data (lsb) 
+// Run this Aduino code and then Run the 2_get-data.py to read this output data.
+
 #include <Wire.h>
 #include "SparkFun_ISM330DHCX.h"
 
@@ -27,8 +30,8 @@ void setup() {
   myISM.setBlockDataUpdate(); // Prevent overwriting of unread data
 
   // Set accelerometer configuration
-  myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // 104Hz data rate
-  myISM.setAccelFullScale(ISM_2g);          // ±2g range
+  myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // 104Hz data rate // fine for here
+  // myISM.setAccelFullScale(ISM_2g);          // ±2g range // no need
   myISM.setAccelFilterLP2();                // Enable low-pass filter
   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_100); // Slope filter setting
 
@@ -48,5 +51,5 @@ void loop() {
     Serial.println("Failed to read raw accelerometer data.");
   }
 
-  delay(100); // Delay to control data output rate (adjust as necessary)
+  //delay(100); // Delay to control data output rate (adjust as necessary)
 }

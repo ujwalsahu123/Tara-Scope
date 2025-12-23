@@ -6,6 +6,8 @@ SparkFun_ISM330DHCX myISM;
 // Define the structure for raw accelerometer data
 sfe_ism_raw_data_t rawAccelData;
 
+
+
 // Define calibration parameters
 const double A[3][3] = { // Calibration matrix
     {0.996986, 0.000024, -0.000549},
@@ -20,6 +22,7 @@ const double b[3] = { // Bias vector
 void setup() {
     Wire.begin();
     Serial.begin(115200);
+
 
     if (!myISM.begin()) {
         Serial.println("Could not initialize ISM330DHCX. Check connections.");
@@ -38,10 +41,10 @@ void setup() {
     myISM.setBlockDataUpdate(); // Prevent overwriting of unread data
 
     // Set accelerometer configuration
-    myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // 104Hz data rate
-    myISM.setAccelFullScale(ISM_2g);          // ±2g range
-    myISM.setAccelFilterLP2();                // Enable low-pass filter
-    myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_100); // Slope filter setting
+    myISM.setAccelDataRate(ISM_XL_ODR_208Hz); // data rate best ->  104, 208 fine. // 416 fast and good.
+    // myISM.setAccelFullScale(ISM_2g); // no need we do scaling by own.
+    myISM.setAccelFilterLP2();                // Enable low-pass filter best -> 
+    myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_100); // Slope filter best -> 
 
     Serial.println("Settings applied.");
 }
@@ -49,7 +52,9 @@ void setup() {
 void loop() {
     // Get raw accelerometer data
     if (myISM.getRawAccel(&rawAccelData)) {
-        // Convert raw LSB values to double
+        // Convert raw LSB values to g, using *0.00006103515625. 
+        // (we are not doing 0.061 since that's mg not g. and the sf wants g . dont do 0.000061, since that has binary representation noise)
+
         double rawX = (rawAccelData.xData) * 0.00006103515625;
         double rawY = (rawAccelData.yData) * 0.00006103515625;
         double rawZ = (rawAccelData.zData) * 0.00006103515625;
@@ -66,23 +71,24 @@ void loop() {
         }
 
         // Calculate magnitude of the calibrated vector
-        double magnitude = sqrt(calib[0] * calib[0] + calib[1] * calib[1] + calib[2] * calib[2]);
+        // If the calibration is done correctly, the magnitude should ideally be close to 1g (in a static condition where the accelerometer is stationary).
+//This means that the accelerometer is correctly aligned and calibrated.
+// If the magnitude deviates significantly from 1g, it might indicate that the calibration matrix or bias vector is not correct.
+        double magnitude = sqrt(calib[0] * calib[0] + calib[1] * calib[1] + calib[2] * calib[2]);  // no need to do in sf.
 
-        // Print calibrated data (X, Y, Z) and the magnitude
+        // Print calibrated data (X, Y, Z) and the magnitude // in sf we will not print it , but give it to the sf. 
         Serial.print("Calibrated X: ");
-        Serial.print(calib[0], 10);
+        Serial.print(calib[0], 5);
         Serial.print(", Y: ");
-        Serial.print(calib[1], 10);
+        Serial.print(calib[1], 5);
         Serial.print(", Z: ");
-        Serial.print(calib[2], 10);
+        Serial.print(calib[2], 5);
         Serial.print(" | Magnitude: ");
-        Serial.println(magnitude, 10);
+        Serial.println(magnitude, 5);
     } else {
         Serial.println("Failed to read raw accelerometer data.");
     }
 
-    delay(100); // Delay to control data output rate (adjust as necessary)
+    // delay(100); // Delay to control data output rate (adjust as necessary)   // correction -> try to get data as fast as possbile, no delay etc. that makes sf slow.
 }
-// If the calibration is done correctly, the magnitude should ideally be close to 1g (in a static condition where the accelerometer is stationary).
-//This means that the accelerometer is correctly aligned and calibrated.
-// If the magnitude deviates significantly from 1g, it might indicate that the calibration matrix or bias vector is not correct.
+

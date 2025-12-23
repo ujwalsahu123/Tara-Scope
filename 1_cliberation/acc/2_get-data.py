@@ -1,8 +1,10 @@
-# this code Reads the output data (lsb data) from the arduino and then stores it into txt file .
-# it also scales from lsb to g . since scaling to g is imp ( sf wants acc in g) 
-# since magneto only takes g unit data and then give offset . 
-# and we need offset to get calib , so scale lsb to g .
+# this code Reads the output data (lsb data) from the arduino and then scales it to g and stores it into txt file .
+# in a single reading - it takes 25 data points and then average them and then scale the averaged value and stores it.
+# scaling is important since - sf wants acc in g . so (LSB * 0.00006103515625 = g)  dont do (lsb * 0.061035... = mg)
 
+# place the sensor at a still orientation - then read . ... again and again at differnt orientations.
+
+# then use magneto to get offset then paste it and see the 3_plot , 4_magnitude , 5_live_Magnitude
 
 
 
@@ -12,7 +14,7 @@ import pandas as pd
 import serial
 
 # Configuration
-MAX_MEAS = 2000  # Maximum number of measurements
+MAX_MEAS = 2000  # Maximum number of measurements // max it takes 2000 reads, but we can increase the number . and stop the read whenever we want.
 AVG_MEAS = 25   # Number of samples to average for one reading // basically when collecting one data point - we dont just store 1 value , we actually take 25 readings and average them to get 1 data point.
 SER_PORT = 'COM6'  # Update to your Arduino's COM port (e.g., 'COM4' on Windows, '/dev/ttyUSB0' on Linux)
 SER_BAUD = 115200  # Baud rate for serial communication
@@ -20,7 +22,7 @@ FILENAME = os.path.join(os.getcwd(), 'acc/acceldata_ism.txt')  # File to save ac
 
 # SerialPort Class to manage Arduino communication
 class SerialPort:
-    def __init__(self, port, baud=9600):
+    def __init__(self, port, baud):
         if not isinstance(port, str):
             raise TypeError('Port must be a string.')
         if not isinstance(baud, int):

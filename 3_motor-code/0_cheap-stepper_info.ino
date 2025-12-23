@@ -7,10 +7,10 @@
 // setRpm() - ?  test kar
 
 // Blocking : 
-// move(bool, steps)
-// moveto(bool, step_position)
-// moveDegrees(bool, degrees)
-// moveToDegrees(bool, degree_position)
+// move(bool, steps) // move itne steps
+// moveto(bool, step_position) // move to this step  // we have to tell -> the initial step 0 konsa hai. and as per that it goes to that step position.
+// moveDegrees(bool, degrees) // move itne degree
+// moveToDegrees(bool, degree_position) // move to this degree
 
 // Non-blocking :
 // .step(bool)  - immediate single step ; dosent need .run()

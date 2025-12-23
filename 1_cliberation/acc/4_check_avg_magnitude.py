@@ -5,15 +5,14 @@
 
 import numpy as np
 
-# Calibration matrix (A^-1) and bias vector (b)
+# Define calibration parameters
 A = np.array([[0.996986, 0.000024, -0.000549], 
               [0.000024, 1.001778, 0.000595],
               [-0.000549, 0.000595, 1.003680]])
 
 b = np.array([0.005380, -0.014230, 0.009798])
-
 # File path
-file_name = '1_cliberation/acc/acceldata_ism.txt'
+file_name = 'using_motor/data.txt'
 
 # Function to apply calibration and calculate magnitude
 def calculate_avg_magnitude(file_path):

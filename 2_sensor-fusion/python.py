@@ -55,11 +55,14 @@ GYRO_SCALING_FACTOR = 0.0000764  # rad/s per LSB  /////////////  ???????????????
 ACCEL_SCALING_FACTOR = 0.00006103515625  # m/s^2 per LSB
 MAG_SCALING_FACTOR = 8.0 / 131072.0 * 100.0  # Specific to magnetometer
 
+# also  // // lsb to g . ///////////////////////////////////////////nice we can also do this 4/65536 = 2/32768
+
+
 # Initialize Madgwick filter
 madgwick = Madgwick(frequency=20)  # Sample period = 1/20 seconds
 
 # Serial port setup for communication with Arduino
-serial_port = "COM5"  # Change this to your serial port
+serial_port = "COM7"  # Change this to your serial port
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate, timeout=1)
 

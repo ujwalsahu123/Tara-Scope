@@ -69,7 +69,8 @@ void setup() {
 void loop() {
   // Get raw accelerometer data
   if (myISM.getRawAccel(&rawAccelData)) {
-    // Apply accelerometer calibration              // lsb to g . 
+    // Apply accelerometer calibration              
+    // // lsb to g . ///////////////////////////////////////////nice we can also do this 4/65536 = 2/32768
     double rawX = (rawAccelData.xData * 2.0) / 32768.0;
     double rawY = (rawAccelData.yData * 2.0) / 32768.0;
     double rawZ = (rawAccelData.zData * 2.0) / 32768.0;

@@ -76,12 +76,12 @@ void setup()
 	// Set the output data rate and precision of the accelerometer
   // Note: we're using 208Hz for accel and 104Hz for gyro
 	myISM.setAccelDataRate(ISM_XL_ODR_208Hz);
-	myISM.setAccelFullScale(ISM_4g);
+	myISM.setAccelFullScale(ISM_2g);
 
 	// Set the output data rate and precision of the gyroscope
   // Note: we're using 208Hz for accel and 104Hz for gyro
 	myISM.setGyroDataRate(ISM_GY_ODR_104Hz);
-	myISM.setGyroFullScale(ISM_250dps);
+	myISM.setGyroFullScale(ISM_125dps);
 
 	// Turn on the accelerometer's filter and apply settings.
 	myISM.setAccelFilterLP2();

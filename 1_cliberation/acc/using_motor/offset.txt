@@ -1,0 +1,9 @@
+# using motor collected data for caliberatin offset : conclusion -
+# Avg magnitude after caliberation, on the Using_Motor data => 0.9999998452420021
+# Avg magnitude after caliberation, on the Manually collected data (data_scaled_to_g.txt) =>  0.9999010790430282
+
+A = np.array([[0.996484, 0.000073, -0.000626], 
+              [0.000073, 1.001848, 0.000512],
+              [-0.000626, 0.000512, 1.003775]])
+
+b = np.array([0.006146, -0.014495, 0.011460])

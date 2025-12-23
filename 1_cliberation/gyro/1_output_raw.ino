@@ -1,3 +1,6 @@
+// prints raw data (lsb) 
+// Run this Aduino code and then Run the 2_get-data.py to read this output data.
+
 #include <Wire.h>
 #include "SparkFun_ISM330DHCX.h"
 SparkFun_ISM330DHCX myISM;
