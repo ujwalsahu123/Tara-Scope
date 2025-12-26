@@ -262,20 +262,29 @@ void loop(){
 // Range() Value seen : 
 // ------------------------------------------------------------------------------------------------------
 // so there is only 1 differnce between raw lsb data and library converted Mg/Mdps data - (that it is scaled as per Range value) - meaning the lsb value par Range laga kar convert kia jata hai to Mg/Mdps data me.
-// so we can also do - get raw LSB value and then khud say manually convert to Mg/Mdps.
-// So what i am doing in calibration and sensor fusion is - not using the library converted data , but using the raw lsb data
-// and then in calibration - storing that raw lsb data - then usko i convert/scale and then voo data ko i send to magneto to get the offset values
-// and in sensor fusion - i use the raw lsb data and then khudsay convert/scale and then apply the offset (so proper unit ka offset is applied) and then use that data for sensor fusion calculations
+// NO THAT IS NOT TRUE - THAT we get LSB value and uspar jo man hai voo range laga doo -> 2g , 8g , 125dps, 500dsp .  
+// SINCE AS PER THE RANGE THE LSB VALUES ARE GIVEN -> ex 2g_lsb = 16494, 4g_lsb = 8849, 8g_lsb = 4135 ...
+// AND THEN AS PER THAT LSB_RANGE WE SCALE -> 2g_lsb * 2g_scale(0.061) ..  4g_lsb * 4g_scale(..)  like that.
+// so we can also do - get raw LSB value and then khud say manually convert to Mg/Mdps. // YES WE CAN DO THIS BUT NEED TO SET RANGE FOR LSB ALSO AND FIR USS HEE RANGE KA SCALE KARNA HOGA 2G_RANGE_KA_LSB THEN 2G_RANGE_KA_SCALE.
+
+// So what i am doing in calibration and sensor fusion is - not using the library converted data , but using the raw lsb data_2G and then 2G_range scale it.
+// and then storing that raw lsb data_2g - then usko i scale to g as per LSB_data ka range and then voo data ko i send to magneto to get the offset values
+// and in sensor fusion - i use the raw lsb data_2g and then khudsay scale and then apply the offset (so proper unit ka offset is applied) and then use that data for sensor fusion calculations
 // why didnt i use the library converted data and khud say manually convert kia, is because - in library it does 0.061, but for more precision i do (more decimal points) - so more precise conversion . and the library wala gives in mg , but we want in g. 
-// but i think it also make it slower calculation - so i need to try doing the calibration and sf using the library converted data (less precise conversion hoga but i dont think bohot jyda hee farak padega and calculation speed may hoga... (need to try and see) ) -> NO library converted data takes more time than manually converting using more decimal points (since thereis no - binary representation noise in manually scaling 0.00006103515625)
-// Other settings like - data rate, filters (leaving the Range) - wo apply hoga hee wheather you use LSB data or converted data. 
-// Raw LSB data is not unfiltered ; Raw LSB data is filtered but unscaled
-// raw LSB read and manually convert to g using * 0.00006103515625.   and this is basiclly +-2 g only.
+// but i think it also make it slower calculation - so i need to try doing the calibration and sf using the library converted data (less precise conversion hoga but i dont think bohot jyda hee farak padega and calculation speed may hoga... (need to try and see) ) 
+// -> NO library converted data takes more time than manually converting using more decimal points (since thereis no - binary representation noise in manually scaling 0.00006103515625)
+// SO ON LSB VALUES ALL THESE THINGS ARE APPLIED -> *RANGE* , DATARATE , FILTERS ..
 
-// for gyro  -> we use lsb * ....... 
+// default is 2g and 250dps. // if you dont set then it will be default set.
 
-// so no need to put any value for Range(). since use use raw lsb.
+// SO for acc -> LSB_2g * 0.000061015625
+// SO for gyro -> LSB_125dps * 0.004375
 
+// WRONG :- so no need to put any value for set_Range(). since use use raw lsb.
+// RIGHT :- Always need to set the range whether we get lsb or scaled data. since even lsb data it gives as per the range().
+
+myISM.setAccelFullScale(ISM_2g); // always set range             
+myISM.setGyroFullScale(ISM_125dps); // always set range
 
 
 
@@ -440,11 +449,10 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 // ISM_LP_ODR_DIV_200
 // ISM_LP_ODR_DIV_400
 // ISM_LP_ODR_DIV_800
-// HP - high pass filters we dont want - they removes slow signals,  Gravity is a slow (DC) signal, Breaks tilt & orientation, Used for motion / wake-up detection only
-// Low Pass Filters we want Low-pass = keeps gravity , Smooths noise, Controls responsiveness, Correct for sensor fusion
+// HP - high pass filters - we dont want - they removes slow signals,  Gravity is a slow (DC) signal, Breaks tilt & orientation, Used for motion / wake-up detection only
+// Low Pass Filters we want Low-pass = keeps gravity , Smooths noise, Controls responsiveness, works for sensor fusion
 
-
-// Slope filter - further smoothens data.
+// Slope filter - smoothens data.
 // Controls how fast the accelerometer output is allowed to change.
 // Lower divider  -> faster response, less smoothing
 // Higher divider -> slower response, more smoothing (stable gravity)
@@ -479,7 +487,6 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 // ISM_HP_FILTER_1Hz04
 // we dont want HP , we want LP.
 
-
 // GYRO LP1 BANDWIDTH
 // Controls how aggressively gyro noise is filtered.
 // Light filtering -> fast but noisy
@@ -513,7 +520,8 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 // higher filter does more noise reduction when the sensor is at motion
 // so if we think ki -> higher filter does more noise reduction in almost same time - then its the best (wrong)
 // since filters make Phase-lag Slow . Ex - You rotate sensor by 10° -> With LP_DIV_10 → output moves immediately , With LP_DIV_800 → output reaches 10° after many samples
-// Heavy filtering can make Responsiveness slower since it does some average with previous values.
+// becuase it does averaging with old samples. 
+// Heavy filtering can make Responsiveness slower since it does average with  more previous values.
 // trade off is -> noise vs responsiveness
 // maybe this cased the sf - to take 1min to come to posi. // so we can try to turn of the filters in sf
 // DIV_10  → noisy, fast
@@ -526,26 +534,27 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 
 // filter Value seen : 
 // -----------------------------------------------------------------------------------------------------------
-// we should keep filters - Low-pass filters improve usable precision by removing noise; they don’t reduce sensor resolution.
-// Sensor fusion needs FAST gyro + moderately clean accel, NOT ultra-smooth accel, NOT heavy filters
-// so keep acc filter (10, 20 , 45, 100) and gyro filter (ultro_light, very_light, light, Medium)
-
-myISM.setAccelFilterLP2(true); // SF may filters -off try krna, since filtering does avg with old values. and sf also does same. so try keeping it off. and then decide to keep on / off.
-myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45); // 45 - balanced (low noise and fast responsiveness) // fast & noisy 10, 20, 45, 100 slower
-myISM.setGyroFilterLP1(true); 
-myISM.setGyroLP1Bandwidth(ISM_LIGHT); //  ISM_ULTRA_LIGHT, ISM_VERY_LIGHT,ISM_LIGHT, ISM_MEDIUM
-// yt guy told to keep gryo filter off and acc filter minimun (20)
-// update below code.
+// we should keep filters - as they make things more smooth. 
+// for other applications -> (Acc - off / 20 / 45) (gyro - off , very_light) - // Read the filter_test.py for more info. 
+// But for Sensor fusion :  responsiveness >  smoothining . because it does averaging and smoothining himself.
+// Sensor fusion algorithms are temporal filters, adding hardware filters causes double-filtering and lag. // maybe this was the reason of slow sf rpy
+// so for sf -> no filtering is better.
 
 
+myISM.setAccelFilterLP2(false); 
+//.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 10, 20. but best is to keep it off 
+// since internally in the library it does calib, etc the value of gyro can be devived from acc values (which if you keep filter on) then it can effect gyro non filter values also. but i am not sure about this fact.
+myISM.setGyroFilterLP1(false); // strictly off
 
 
 
 
 // ######################################################### Block Data #########################################################
 
- // 	bool setBlockDataUpdate(bool enable = true); // set block data update ( data is not updated until both MSB and LSB have been read from output registers , so you get correct data)
-// 		uint8_t getBlockDataUpdate(); // get block data update 
+
+	bool setBlockDataUpdate(bool enable = true); // set block data update ( data is not updated until both MSB and LSB have been read from output registers , so you get correct data)
+	uint8_t getBlockDataUpdate(); // get block data update 
+
 // Each axis value is 16-bit, but the MCU reads it in two steps:
 // read LSB
 // read MSB
@@ -553,6 +562,7 @@ myISM.setGyroLP1Bandwidth(ISM_LIGHT); //  ISM_ULTRA_LIGHT, ISM_VERY_LIGHT,ISM_LI
 //  When enabled, the sensor freezes the output registers until both MSB and LSB are read.
 // Bascially - these make sure that agay peechay wala data naa read hoo. 
 // example : BDU = ON (safe mode) -> Once new data is ready → it freezes the registers, then Waits until both LSB + MSB are read, and Only then updates to next sample
+
 
 
 
@@ -618,26 +628,33 @@ myISM.setGyroLP1Bandwidth(ISM_LIGHT); //  ISM_ULTRA_LIGHT, ISM_VERY_LIGHT,ISM_LI
 
 
 
-// in sf ->   // Note: we can't do prints inside the while loop. They slow things down too much... so print every 10th loop . 
 
 
 // ##################################################################################################################################### 
 // ######################################################### Final Setting ISM ######################################################### 
 
+
+
 // final acc settings
 // --------------------------------------------------
 // Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
 myISM.setAccelDataRate(ISM_XL_ODR_208Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
-myISM.setAccelFullScale(ISM_2g); // 2 , 4 , 8 ,16g  // no need , we do scaling manually 
-myISM.setAccelFilterLP2(true); // SF may filters -off try krna, since filtering does avg with old values. and sf also does the same. so try keeping it off. and see the result and decide - on / off. 
-myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45); // 45 - balanced (low noise and fast responsiveness) // (fast & noisy) 10, 20, 45, 100 (slower response but less noisy)
+myISM.setAccelFullScale(ISM_2g); // always need to set range , even if scaling manually.
+// test: in Motor_code if motor moves faster than 2g then the sensor values can break - so in that senario we can do 4g or 8g or 250dps , etc  , but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
+myISM.setAccelFilterLP2(false); 
+// myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 10, 20. but best is to keep it off 
+
+
+
 
 // final gyro settings
 // --------------------------------------------------
 myISM.setGyroDataRate(ISM_GY_ODR_208Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
-myISM.setGyroFullScale(ISM_125dps); // 125, 250, 500, 1000, 2000 4000dps // no need, we do scalin manually
-myISM.setGyroFilterLP1(true); // try off in sf - and see responsivess. and deicide - keeping it on or off.
-myISM.setGyroLP1Bandwidth(ISM_LIGHT); // ISM_LIGHT is balanced //  (fast & noisy) ISM_ULTRA_LIGHT, ISM_VERY_LIGHT,ISM_LIGHT, ISM_MEDIUM (Slower response, less noise)
+myISM.setGyroFullScale(ISM_125dps); //always need to keep on even if scalling manually.
+myISM.setGyroFilterLP1(false); // strictly off
+
+
+
 
 // final fifo values :
 // -------------------------------------------------------------------------------------------------------
@@ -651,7 +668,11 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 
 
 
+
 // sensor hub seen , interrupt pin seen , offset seen ...
+
+
+
 
 
 
@@ -660,57 +681,55 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 // ----------------------------------------------------------------------------------------------------------
 
 void setup() {
-    Wire.begin();
+	Wire.begin();
     Serial.begin(115200);
-
-
+	
+	
     if (!myISM.begin()) {
-        Serial.println("Could not initialize ISM330DHCX. Check connections.");
+		Serial.println("Could not initialize ISM330DHCX. Check connections.");
         while (1);
     }
-
+	
     // Reset the device to default settings
     myISM.deviceReset();
     while (!myISM.getDeviceReset()) {
-        delay(1);
+		delay(1);
     }
-		Serial.println("Reset complete.");
-		Serial.println("Applying settings.");
-		delay(100);
-
-
+	Serial.println("Reset complete.");
+	Serial.println("Applying settings.");
+	delay(100);
+	
+	
     // Apply device settings
-
     myISM.setDeviceConfig();
     myISM.setBlockDataUpdate(); 
+	
+	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
+	
+	// Range -> always need to set, even if scaling maunally
+	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
+	myISM.setAccelFullScale(ISM_2g); 
+	myISM.setGyroFullScale(ISM_125dps); 
+	// if you wanna update the range of acc or gyro then - not just you have to change the scaling factor , but again calib (as per that_range_lsb_data * that_range_scaling_factor) and get new offset.
 
-    Wire.setClock(400000); // Essential when running the accel and gyro at 416Hz or faster. // put this always.
-
-    // Set accelerometer configuration
+	// DataRate -> 
 	myISM.setAccelDataRate(ISM_XL_ODR_208Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
-	myISM.setAccelFullScale(ISM_2g); // 2 , 4 , 8 ,16g  // no need , we do scaling manually 
-	myISM.setAccelFilterLP2(true); // SF may filters -off try krna, since filtering does avg with old values. and sf also does the same. so try keeping it off. and see the result and decide - on / off. 
-	myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45); // 45 - balanced (low noise and fast responsiveness) // (fast & noisy) 10, 20, 45, 100 (slower response but less noisy)
-
-
-
-    // Set gyroscope configuration
 	myISM.setGyroDataRate(ISM_GY_ODR_208Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
-	myISM.setGyroFullScale(ISM_125dps); // 125, 250, 500, 1000, 2000 4000dps // no need, we do scalin manually
-	myISM.setGyroFilterLP1(true); // try off in sf - and see responsivess. and deicide - keeping it on or off.
-	myISM.setGyroLP1Bandwidth(ISM_LIGHT); // ISM_LIGHT is balanced //  (fast & noisy) ISM_ULTRA_LIGHT, ISM_VERY_LIGHT,ISM_LIGHT, ISM_MEDIUM (Slower response, less noise)
-
-
-	// fifo config (not much to do here, can try stream mode in SF)
-	myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes ONLY the latest sample and fifo is off.  (ISM_FIFO_MODE) FIFO buffer fills until full, then STOPS writing new samples. (ISM_STREAM_MODE) for contineous updating old data circular buffer (old data overwritten by new data).
-	// below functions use only if fifo is enabled (fifo_mode, stream_mode)
-	// myISM.setAccelFifoBatchSet(ISM_XL_BATCH_AT_104Hz); // keep same Hz as data rate or differnt as per how you want to store the readings
-	// myISM.setGyroFifoBatchSet(ISM_GY_BATCH_AT_104Hz) ; // 
-	// lets try FIFO_mode and Stream_mode in SF (maybe it can solve the laggy problem).....
-
-
-
-     delay(100);
+	
+	// Filter ->
+	myISM.setAccelFilterLP2(false); 
+	// myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 10, 20. but best is to keep it off 
+	myISM.setGyroFilterLP1(false); // strictly off
+	
+	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
+	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
+	
+	
+	.............
+	
+	
+	
+	delay(100);
     Serial.println("Settings applied.");
 }
 
@@ -728,29 +747,28 @@ void setup() {
 
 
 // ###################################################################################################
-// update these in ACC , Gryo ,  SF code files ......... 
+// update these code in all ACC , Gryo ,  SF code files (Gothrough each code file, and read every line - ino/py both)
 
 
 
 
 
+// in sf ->   // Note: we can't do prints inside the while loop. They slow things down too much... so print every 10th loop . 
+
+
+// tune beta / gain in SF (this matters more than filters)
+
+// verify ODR vs SF update rate
+
+// check why some axes show higher noise
+
+
+// /// for sf the most important thing is responsiveness . and any kind of delay make things bad. 
+// ex - you steer the car ,but tire takes 5 second to actually move. this was happening -> when it took 1 min by sf to come to read posi.
+// and if it tries to correct it then it ossicalates ->   0-> 100 then comes to 25 then 75 ... till it comes 50. 
+// So remove all things that does dealy or lowers responsiveness before giving the sensors data to sf  -> filter , printing linges every loop, distorting delays, non distorting delays ..... find out.... what this video https://www.mathworks.com/videos/control-systems-in-practice-part-4-why-time-delay-matters-1536913253300.html
 
 
 
 
-
-
-
-
-//Q.g )  -> answer
-// Range is decided by sensor hardware, not by math.
-// ISM Sensor is built to measure only ±2g, ±4g, ±8g, ±16g. (if there was a sensor which does +-1g then we could have done LSB * 2/2^16 .
-//  but that would have not made things more precise. - the thing is the range +2g to -2g means it can detect the acceleartion between the rang +2g to -2g. and precisely.
-//  but if the range was +1 to -1 then at rest it would be at max value 1 , since gravity at rest is 1. and if we applied more g than +1 then it would not capture it .
-//  and it would only capture free fall (-g) between +1 to -1. so for our application - i think the best is +-2 g . since in motor not goes beyond +2g to 0g . and stays +1g at rest. so this is the best i guess.
-// Gravity itself is 1g.
-// If range was ±1g, gravity alone would hit the limit.
-// Any small movement would go out of range (clip).
-// Changing numbers in software does not increase real precision.
-// Smaller fake range only makes noise look bigger.
-// ±2g is the smallest safe and most precise real range.
+// gyro may joo ARW and Bias_instability calculate kiya that can be use in sf , kalman filter...

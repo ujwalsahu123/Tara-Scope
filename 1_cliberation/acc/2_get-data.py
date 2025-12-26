@@ -76,7 +76,7 @@ def record_data_point(ser: SerialPort) -> tuple:
         az += az_now
 
     # after loop ends
-    ax = (ax / AVG_MEAS) * 0.00006103515625  # average out, and Convert to g
+    ax = (ax / AVG_MEAS) * 0.00006103515625  # average out, and Convert to g as per 2g_lsb
     ay = (ay / AVG_MEAS) * 0.00006103515625 
     az = (az / AVG_MEAS) * 0.00006103515625  
     return ax , ay , az 

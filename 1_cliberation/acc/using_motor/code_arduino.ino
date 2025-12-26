@@ -2,6 +2,25 @@
 // it prints - average of 25 values (we are doing averaging here only in arduino, and not in py)
 // and then in py - it just reads and scales the value and then store it.
 
+
+
+
+// update this code ka setup() as per 1_basic_ino
+
+
+
+////////////////////////////////////// to do //////////////////////////////////////////
+// and again need to calib the acc using motor. -> 2g range properly set (uncommited). and this time NO filter (acc, gyro)
+// so run code_python.py and store data in data_g_2g_NOfilter.
+// then see avg magnitude and live magnitude and update in final_offset.txt
+
+
+
+
+
+
+
+
 #include <Wire.h>
 #include "SparkFun_ISM330DHCX.h"
 #include <CheapStepper.h>

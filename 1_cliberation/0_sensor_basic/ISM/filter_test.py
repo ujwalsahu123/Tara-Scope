@@ -1,13 +1,58 @@
-# // filter values i will test and do anlysis using the python . 
-
-# // so one by one it will give filter values (10, 20 , 45, 100) (ultra_light, very_light, light, medium) and then we run analysis on it. 
+# // acc, gyro - filters anlysis using python . 
 
 
-#  arduino code for getting the data for analysis.
+# // run arduino code. (for getting the data for analysis) 
+# // ard code will one by one give filter values (10, 20 , 45, 100) (ultra_light, very_light, light, medium) and then we run analysis on it. 
+# // copy the code from serial.monitor and then paste that code in filter.txt. (use the copy button on right side of serial monitor)
+
+
+
+### conclusion -> 
+# all filters take almost the same time - and no one is slow. 
+# but the real game is not of time, its about  Responsiveness .
+# responsivness is slowness is the phase-delay (latest changes it cannot reflect since it does averaging with old values) (but we cannot analyse that)
+
+# at sensor rest the best noise reduction is done by lowest filter (but thats not the game- moving is the game)
+# At sensor Moving the higher the filter the more noise reduction it did. 
+# we will only analyse - off filter and LP filter. (since High Pass filters cancels out gravity also)
+
+# Lower filters (of,10,20,.. ultralight) -> more noisy , but fast responsiveness
+# Higher filters (200,400,.. strong) -> less noisy , but Slower responsiveness . 
+
+# result: keep values ->
+# ACC - (off,20,45)
+# off (okayish noise, fastest responsiveness) 
+# 20,45 is good (lesser noise, fine responsiveness) 
+# 10 (more noise than off)
+# GYRO - (off)
+# off (okayish noise, fastest responsiveness)
+# UltraLight (more noise than off)
+# Light ,etc (lesser noise but very slow responsivess)
+
+
+# For sf -> 
+# keep the acc filter minimum and gyro filter off, since sf also does filtering and averaging
+# for sf -> responsiveness > smoothness
+# keep acc -> off
+# keep gryo -> off
+
+# for other applictions -> viberation analysis , etc - you can keep filters as per that.
+
+
+
+
+
+
+
+
+
+
+
+
+#  arduino code
 ####################################################################################################
 
-
-# // ONLY LP filter
+# // ONLY LP filter --------------------------------------------------------
 
 # #include <Wire.h>
 # #include "SparkFun_ISM330DHCX.h"
@@ -91,25 +136,32 @@
 #   myISM.setDeviceConfig();
 #   myISM.setBlockDataUpdate();
 
-#   // ODR = 208 Hz
+#   // datarate = 208 Hz
 #   myISM.setAccelDataRate(ISM_XL_ODR_208Hz);
 #   myISM.setGyroDataRate(ISM_GY_ODR_208Hz);
 
 #   // Ranges
 #   myISM.setAccelFullScale(ISM_2g);
-#   myISM.setGyroFullScale(ISM_250dps);
+#   myISM.setGyroFullScale(ISM_125dps);
 
-#   // Enable base LP filters
-#   myISM.setAccelFilterLP2(true);
-#   myISM.setGyroFilterLP1(true);
+#   myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
+
 
 #   delay(1000);
 
-#   // --------------------------------------------------
-#   // ACCEL FILTER TEST
-#   // --------------------------------------------------
 
-#   Serial.println("===== ACCEL FILTER TEST (LP DIV) =====");
+#   // ======================================================
+#   // ACCEL 
+#   // ======================================================
+
+#   Serial.println("===== ACCEL FILTER TEST =====");
+
+#   myISM.setAccelFilterLP2(false); // filter off
+#   delay(100);
+#   collectAccel("ACC_NO_filter");
+
+#   myISM.setAccelFilterLP2(true);
+#   delay(100);
 
 #   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_10);
 #   collectAccelSamples("ACC_LP_DIV_10");
@@ -132,11 +184,18 @@
 #   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_800);
 #   collectAccelSamples("ACC_LP_DIV_800");
 
-#   // --------------------------------------------------
-#   // GYRO FILTER TEST
-#   // --------------------------------------------------
+#   // ======================================================
+#   // GYRO 
+#   // ======================================================
 
-#   Serial.println("===== GYRO FILTER TEST (LP1 BW) =====");
+#   Serial.println("===== GYRO FILTER TEST  =====");
+
+#   myISM.setGyroFilterLP1(false); // filter off
+#   delay(100);
+#   collectGyro("GYRO_NO_filter");
+
+#   myISM.setGyroFilterLP1(true); 
+#   delay(100);
 
 #   myISM.setGyroLP1Bandwidth(ISM_ULTRA_LIGHT);
 #   collectGyroSamples("GYRO_ULTRA_LIGHT");
@@ -168,182 +227,6 @@
 # {
 #   // intentionally empty
 # }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-################################################################################################
-
-
-# //ALL filters Analysis
-
-# #include <Wire.h>
-# #include "SparkFun_ISM330DHCX.h"
-
-# SparkFun_ISM330DHCX myISM;
-
-# sfe_ism_raw_data_t accRaw;
-# sfe_ism_raw_data_t gyroRaw;
-
-# const int SAMPLE_COUNT = 100;
-
-# // --------------------------------------------------
-# // Helpers
-# // --------------------------------------------------
-
-# void collectAccel(const char *label)
-# {
-#   unsigned long tStart = micros();
-
-#   Serial.println(label);
-#   for (int i = 0; i < SAMPLE_COUNT; i++)
-#   {
-#     while (!myISM.checkAccelStatus());
-#     myISM.getRawAccel(&accRaw);
-
-#     Serial.print(accRaw.xData);
-#     Serial.print('\t');
-#     Serial.print(accRaw.yData);
-#     Serial.print('\t');
-#     Serial.println(accRaw.zData);
-#   }
-
-#   unsigned long tEnd = micros();
-#   Serial.print("Time_us: ");
-#   Serial.println(tEnd - tStart);
-#   Serial.println();
-# }
-
-# void collectGyro(const char *label)
-# {
-#   unsigned long tStart = micros();
-
-#   Serial.println(label);
-#   for (int i = 0; i < SAMPLE_COUNT; i++)
-#   {
-#     while (!myISM.checkGyroStatus());
-#     myISM.getRawGyro(&gyroRaw);
-
-#     Serial.print(gyroRaw.xData);
-#     Serial.print('\t');
-#     Serial.print(gyroRaw.yData);
-#     Serial.print('\t');
-#     Serial.println(gyroRaw.zData);
-#   }
-
-#   unsigned long tEnd = micros();
-#   Serial.print("Time_us: ");
-#   Serial.println(tEnd - tStart);
-#   Serial.println();
-# }
-
-# // --------------------------------------------------
-# // Setup
-# // --------------------------------------------------
-
-# void setup()
-# {
-#   Serial.begin(115200);
-#   Wire.begin();
-#   Wire.setClock(400000);
-
-#   if (!myISM.begin())
-#   {
-#     Serial.println("ISM not detected");
-#     while (1);
-#   }
-
-#   myISM.deviceReset();
-#   while (!myISM.getDeviceReset());
-
-#   myISM.setDeviceConfig();
-#   myISM.setBlockDataUpdate();
-
-#   // ODR = 208 Hz
-#   myISM.setAccelDataRate(ISM_XL_ODR_208Hz);
-#   myISM.setGyroDataRate(ISM_GY_ODR_208Hz);
-
-#   // Ranges
-#   myISM.setAccelFullScale(ISM_2g);
-#   myISM.setGyroFullScale(ISM_250dps);
-
-#   // Enable base LP filters
-#   myISM.setAccelFilterLP2(true);
-#   myISM.setGyroFilterLP1(true);
-
-#   delay(1000);
-
-#     // ======================================================
-#   // ACCEL — LP (Slope) FILTERS
-#   // ======================================================
-#   Serial.println("===== ACCEL FILTER TEST =====");
-
-#   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_10);  collectAccel("ACC_LP_DIV_10");
-#   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20);  collectAccel("ACC_LP_DIV_20");
-#   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45);  collectAccel("ACC_LP_DIV_45");
-#   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_100); collectAccel("ACC_LP_DIV_100");
-#   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_200); collectAccel("ACC_LP_DIV_200");
-#   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_400); collectAccel("ACC_LP_DIV_400");
-#   myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_800); collectAccel("ACC_LP_DIV_800");
-
-#   // ======================================================
-#   // ACCEL — HIGH PASS FILTERS
-#   // ======================================================
-
-#   myISM.setAccelSlopeFilter(ISM_HP_ODR_DIV_10);  collectAccel("ACC_HP_DIV_10");
-#   myISM.setAccelSlopeFilter(ISM_HP_ODR_DIV_45);  collectAccel("ACC_HP_DIV_45");
-#   myISM.setAccelSlopeFilter(ISM_HP_ODR_DIV_100); collectAccel("ACC_HP_DIV_100");
-#   myISM.setAccelSlopeFilter(ISM_HP_ODR_DIV_200); collectAccel("ACC_HP_DIV_200");
-
-#   // ======================================================
-#   // ACCEL — HP REF MODE (motion detection)
-#   // ======================================================
-
-#   myISM.setAccelSlopeFilter(ISM_HP_REF_MD_ODR_DIV_45);  collectAccel("ACC_HP_REF_MD_45");
-#   myISM.setAccelSlopeFilter(ISM_HP_REF_MD_ODR_DIV_100); collectAccel("ACC_HP_REF_MD_100");
-
-#   // ======================================================
-#   // GYRO — LP1 BANDWIDTH
-#   // ======================================================
-#   Serial.println("===== GYRO FILTER TEST  =====");
-
-#   myISM.setGyroLP1Bandwidth(ISM_ULTRA_LIGHT);  collectGyro("GYRO_ULTRA_LIGHT");
-#   myISM.setGyroLP1Bandwidth(ISM_VERY_LIGHT);   collectGyro("GYRO_VERY_LIGHT");
-#   myISM.setGyroLP1Bandwidth(ISM_LIGHT);        collectGyro("GYRO_LIGHT");
-#   myISM.setGyroLP1Bandwidth(ISM_MEDIUM);       collectGyro("GYRO_MEDIUM");
-#   myISM.setGyroLP1Bandwidth(ISM_STRONG);       collectGyro("GYRO_STRONG");
-#   myISM.setGyroLP1Bandwidth(ISM_VERY_STRONG);  collectGyro("GYRO_VERY_STRONG");
-#   myISM.setGyroLP1Bandwidth(ISM_AGGRESSIVE);   collectGyro("GYRO_AGGRESSIVE");
-#   myISM.setGyroLP1Bandwidth(ISM_XTREME);       collectGyro("GYRO_XTREME");
-
-#   // ======================================================
-#   // GYRO — HIGH PASS FILTERS
-#   // ======================================================
-
-#   myISM.setGyroFilterLP1(ISM_HP_FILTER_NONE);   collectGyro("GYRO_HP_NONE");
-#   myISM.setGyroFilterLP1(ISM_HP_FILTER_16mHz);  collectGyro("GYRO_HP_16mHz");
-#   myISM.setGyroFilterLP1(ISM_HP_FILTER_65mHz);  collectGyro("GYRO_HP_65mHz");
-#   myISM.setGyroFilterLP1(ISM_HP_FILTER_260mHz); collectGyro("GYRO_HP_260mHz");
-#   myISM.setGyroFilterLP1(ISM_HP_FILTER_1Hz04);  collectGyro("GYRO_HP_1Hz04");
-
-# }
-
-# void loop() {}
-
-
-
-
 
 
 
@@ -513,14 +396,3 @@ if __name__ == "__main__":
     plot_tradeoff(summary)
 
 
-# conclusion -> 
-# all time are same - and no one is slow. 
-# but the real slowness is the phase-delay (responsivness) (but we cannot analyse that)
-# and at rest the best noise reductin is done by lowest filter (but thats not the game)
-# and at motion the higher the filter the more noise reduction it did. 
-# so all filters take same time
-# Lower filters -> more noisy , but fast responsiveness
-# Higher filters -> less noisy , but Slower responsiveness . 
-# keep acc -> 45 
-# keep gryo -> Light 
-# in SF can turn off the filters and test. and see what happens. 

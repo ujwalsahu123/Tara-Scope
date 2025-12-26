@@ -1,3 +1,12 @@
+// apply caliberation on live data - and see the xyz and Magnitude . 
+// by seeing the magnitude you can judge if the offset are good or bad as per (magnitude close to 1).
+
+
+////////////////////////////////////////////////////
+// update this code ka setup() as per 1_basic_ino
+
+
+
 #include <Wire.h>
 #include "SparkFun_ISM330DHCX.h"
 
@@ -42,7 +51,7 @@ void setup() {
 
     // Set accelerometer configuration
     myISM.setAccelDataRate(ISM_XL_ODR_208Hz); // data rate best ->  104, 208 fine. // 416 fast and good.
-    // myISM.setAccelFullScale(ISM_2g); // no need we do scaling by own.
+    myISM.setAccelFullScale(ISM_2g); 
     myISM.setAccelFilterLP2();                // Enable low-pass filter best -> 
     myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_100); // Slope filter best -> 
 

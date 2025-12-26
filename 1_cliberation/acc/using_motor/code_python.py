@@ -16,7 +16,7 @@ import os
 PORT = 'COM7'          # change if needed
 BAUD = 115200
 OUTFILE = 'Data.txt'
-SCALE = 0.00006103515625  # LSB → g
+SCALE = 0.00006103515625  # 2g_LSB → 2g_G
 
 ser = serial.Serial(PORT, BAUD, timeout=1)
 time.sleep(2)

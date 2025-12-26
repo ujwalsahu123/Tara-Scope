@@ -1,6 +1,7 @@
 # at stable positioning - the magnitude value must me 1 . or closest to one . 
 # and using this code you can see the avg magnitude of the data , and by that you can 
 # know if you offset values are good or bad .
+# also can use 5_ardu_calib code to see magnitude on Live data.
 
 
 import numpy as np

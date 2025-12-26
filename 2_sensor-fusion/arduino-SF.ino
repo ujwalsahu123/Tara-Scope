@@ -166,7 +166,12 @@ void loop() {
 
 
 
+/// giving time also to sensor fusion 
 
+// try :  -  this technique worked 
+// filters keep off both . and 104 hz both acc and gryo
+// gyro scale to Lsb * 0.070 
+// and it works ...
 
 #include <Wire.h>
 #include "SparkFun_ISM330DHCX.h"
