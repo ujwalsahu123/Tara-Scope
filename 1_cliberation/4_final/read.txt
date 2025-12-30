@@ -1,0 +1,18 @@
+learn how the offset/bias are calculted of Acc, Mag, Gyro using Algos ....
+
+
+can also do this later in RnD stage:-
+**** Temperature-dependent calibration (what it means)
+Problem
+Accelerometer & gyro bias changes with temperature.
+Example:
+At 25°C → bias = [0.005, -0.014, 0.009]
+At 45°C → bias = [0.008, -0.018, 0.012]
+Solution
+Measure temperature (sensor has temp register)
+Store calibration at multiple temps
+Interpolate bias vs temperature
+Used in: drones, rockets, satellites
+You can skip this for now unless you see large temp swings.
+So we store how much bias changes as per the temp..... and when user does initial calib to find offset and bias it also stores temp....
+and then for long stargazing session - it sees the temp and updates the bias as per that. (instead of again and again doing calib after some time when temp changes.)

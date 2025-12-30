@@ -1,0 +1,151 @@
+***No Calib 
+
+# Avg magnitude on manual collected 2g_100filter data => 0.9992114273274656
+# Avg magnitude on motor_code 2g_100filter => 0.9996689866328226
+# Magnitude on live data => 1.006 
+# here we cannot calculate the error since its not calib and we didnt give it any g like 1g or 0.97..g
+
+
+##############################################################################3
+****using Manually collected data for caliberatin offset ka conclusion -
+
+Magneto -> 1g:
+2g_100filter:-----------------------------------
+# Avg magnitude after caliberation, on the Manually collected data (data_scaled_to_g.txt) =>  0.9999989067576526 (-0.000002 error)
+# Magnitude on live data => 1.000 (0 error)
+
+A = np.array([[0.996986, 0.000024, -0.000549], 
+              [0.000024, 1.001778, 0.000595],
+              [-0.000549, 0.000595, 1.003680]])
+
+b = np.array([0.005380, -0.014230, 0.009798])
+
+
+Magneto -> 0.978593:
+2g_100filter:-----------------------------------
+# Avg magnitude after caliberation, on the Manually collected data (data_scaled_to_g.txt) =>   0.97859170335328 (-0.000002 error)
+# Magnitude on live data => 0.979 (+0.001 error)
+
+A = np.array([[0.975643, 0.000023, -0.000537], 
+              [0.000023, 0.980333, 0.000583],
+              [-0.000537, 0.000583, 0.982194]])
+
+b = np.array([0.005380, -0.014230, 0.009798])
+
+
+
+####################################################################################################
+***** using Manually collected data for caliberatin offset ka conclusion - 
+
+Magneto : 1g
+2g_100filter:-----------------------------------
+# Avg magnitude after caliberation, on the Using_Motor data => 0.9999998452420021 (-0.00000015 error)
+# Magnitude on live data => 0.998 (-0.002 error)
+
+A = np.array([[ 0.996484,0.000073 , -0.000626], 
+              [ 0.000073,1.001848 , 0.000512],
+              [-0.000626 ,0.000512 , 1.003775]])
+
+b = np.array([  0.006146, -0.014495,0.011460 ])
+
+
+Magneto : 0.978593 
+2g_100filter:------------------------------------
+# Avg magnitude after caliberation, on the Using_Motor data => 0.9785931526980024 (+0.00000015 error)
+# Magnitude on live data => 0.977 (-0.001 error)
+
+A = np.array([[ 0.975153, 0.000071, -0.000613], 
+              [0.000071 , 0.980402, 0.000501],
+              [ -0.000613, 0.000501, 0.982287]])
+
+b = np.array([ 0.006146,-0.014495 , 0.011460])
+
+
+
+
+Magneto : 1g
+2g_NOfilter:-------------------------------------
+# Avg magnitude after calibration, on the Using_Motor data => 
+# Magnitude on live data =>
+
+A = np.array([[ , , ], 
+              [ , , ],
+              [ , , ]])
+
+b = np.array([ , , ])
+
+
+Magneto : 0.978593
+2g_NOfilter:------------------------------------
+# Avg magnitude after calibration, on the Using_Motor data => 
+# Magnitude on live data =>
+
+ np.array([[ , , ], 
+              [ , , ],
+              [ , , ]])
+
+b = np.array([ , , ])
+
+
+
+
+
+
+
+
+
+
+####################################################################################################
+
+# should i even do calib ? since already its giving good values (1.006 live data magnitude) much more smoother value even at no filter.
+-> Yes need to do filter since at rest the with no calib magnitude should be same as gravity(9.7 or 9.8..) but its 1.006 this means -> its gravity + sensor error
+-> so need to do calib to remove the error . but should we remove the error ? since after calib also we get some error .
+-> so yes but still calib is IMP since it cant magically remove noise but it corrects -> Constant bias (offset) , Axis scale mismatch, axis misalignment.
+-> So need to do Calib. 
+
+# we will use no filter wala offset or filter wala ? 
+-> if we use 100_filter in inference then need to use 100_filter wala calib, 
+-> and if we use No_filter in inference then need to use NO_filter wala calib,
+-> so as per inference filter you will use - you we need to use that same filter for calib
+-> we will use no Filter thus no filter wala calib we will use (so we use using_motor No_filter wale data ka calib-offset and bias)
+
+# we will use 1g or local_g in magneto ? and does it matter what g we use ? 
+-> yes it matters you can use 1g in magneto or local_g - and as per that the magneto will give you offset and bias 
+-> and that offset and bias will try to make the Magnitude close to that g.
+-> ex- if 1g then it will try to make the (raw math calib) close to 1g
+-> ex- if 0.978g then it will try to make the (raw math calib) close to 0.978g
+-> 1g vs Local_g which has less noise ? -> both have exact similar noise after calib, (+-0.00000015 error on Avg Magnitude) (- 0.001 error on live magnitude).  which is super less. 
+-> so the main question is does using local_g increase accuracy ? -> ???????????????????????????????
+
+(if local_g increases then we need to do Auto_calib_g , else not)
+
+
+-> so final 
+-> we do calibration 
+-> use No_filter data for calculating calibration offset (since inference may bhi we dont apply filter)
+-> use Motor_calib code since manually kon karega - and its worst . motor wala is way more precise since no handshakes, etc. 
+-> 1g vs local_g ->   ??????????????????????
+
+
+
+////////////////////////////////  to do   /////////////////////////////////////////////////
+// Read this full .txt file 
+// first gpt see and know which is better 1g or local_g (mostly many people on internet used the local_g - including Adafulit offical blog in acc calib)
+
+// and again need to calib the acc using motor. -> 2g, 104hz , for each filter -> no, 20 , 45. (not10)
+// so run code_python.py  /// or collect data from serial monitor 
+// get data as per differnt filter -> no , 20 , 45  (not 10)  -> at 104hz... and store in differnt files.txt....
+// and inn sabka offset likh in final_offset.txt (using 1g or local_g ????)
+// then see avg magnitude and live magnitude for 2g_nofilter both -> (1g and local_g) and update kar (magnitude,error) upar in final_offset.txt
+
+
+
+
+
+
+-> so final offset ..... 
+-> ....   using_motor/nofilter/1g   or  using_motor/nofilter/local_g   inme say koi ek ka offset we use - as per (1g vs local_g)
+
+ ... and also write 20_filter, 45_filter ka offset for (1g or local_g) also here 
+
+update the new offset in 5_ardu_calib_acc 8_Auto_calib_acc.ino

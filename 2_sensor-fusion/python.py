@@ -25,6 +25,36 @@
 
 
 
+
+
+
+# xtra info read 
+# -----------------------------------------------------------------------------
+# // in sf ->   // Note: we can't do prints inside the while loop. They slow things down too much... so print every 10th loop . 
+
+
+# // tune beta / gain in SF (this matters more than filters)
+
+# // verify ODR vs SF update rate
+
+# // check why some axes show higher noise
+
+
+# // /// for sf the most important thing is responsiveness . and any kind of delay make things bad. 
+# // ex - you steer the car ,but tire takes 5 second to actually move. this was happening -> when it took 1 min by sf to come to read posi.
+# // and if it tries to correct it then it ossicalates ->   0-> 100 then comes to 25 then 75 ... till it comes 50. 
+# // So remove all things that does dealy or lowers responsiveness before giving the sensors data to sf  -> filter , printing linges every loop, distorting delays, non distorting delays ..... find out.... what this video https://www.mathworks.com/videos/control-systems-in-practice-part-4-why-time-delay-matters-1536913253300.html
+
+
+
+# // gyro may joo ARW and Bias_instability calculate kiya that can be use in sf , kalman filter...
+
+
+
+
+# REALLY FIRST LEARN LEARN IF WE NEED TO USE SENSOR FUSION , OR ATAN() SAY MORE ACCURATE RPY MITLE HAI ?  -> use ACC_Gyro to compute ROLL, PITCH and use MAG to comput YAW and now we have RPY - so test this and see .... i dont think its better since gyro has noise and bias drift ... so need to do KALMAN Filter and Sensor fusion , but still make a code file which uses the ATAN() for RPY... just for aise hee..
+
+
 #####################update the unit as per the updateMARG wants . and as per that unit only get offset from magneto.
 
 

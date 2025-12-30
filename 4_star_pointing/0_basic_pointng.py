@@ -1,6 +1,8 @@
 # see the ai_guide_app.py code (for how to calculate the alt az of a star.) - full study how that code works. - which libaraies do we use etc and how does it calculate ... etc all
 # also take a day out to learn about - libraries using which the alt az are calculated - py libraries , js libaries , etc ... 
 
+# when calculating the Star alt az then proper time dal (not kolkata / delhi) proper mumbai time. ( in india mumbai time is same as kolkata ,etc ..) so need to use api or etc way to get proper timing as per my lati longi 
+
 
 # select a star from the list in terminal. 
 # then voo star ka alt az calulate and give to arduino for pointing. (3_full-motor-code.ino use kar)

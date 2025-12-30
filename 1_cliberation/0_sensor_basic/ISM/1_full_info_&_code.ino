@@ -541,9 +541,11 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 // so for sf -> no filtering is better.
 
 
+// can keep acc filter on and gyro filter off - and its fine. since internally there is nothing like gyro data are influenced by acc data (so if acc may filter hai then if effect the gyro data also) NO. 
+// both data are independent so we can keep acc-on and gyro-off. 
+
 myISM.setAccelFilterLP2(false); 
-//.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 10, 20. but best is to keep it off 
-// since internally in the library it does calib, etc the value of gyro can be devived from acc values (which if you keep filter on) then it can effect gyro non filter values also. but i am not sure about this fact.
+//.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 10, 20, 45  
 myISM.setGyroFilterLP1(false); // strictly off
 
 
@@ -624,6 +626,117 @@ myISM.setGyroFilterLP1(false); // strictly off
 
 
 
+// ################################################### LOOP ########################################################################
+
+// Big problem : The loop Tries to run as fast as possible, so it may run faster than the DataRate, which can cause poblems
+// ex -> Sensor DataRate 104hz so it gives around 104_values per second but the loop runs at 812hz (loop runs as fast as the MCU can execute the code)
+// so the Loop treies to get the Sensor data but more faster than it updates new values , so thus we get Repeated data.
+// So to solve -> "loop tries to run as fast as possible." we need to put a timer before each iteration so that the loop can run at same Hz as the Sensor Datarate
+// so need to use Timing_system in all Loops : 
+// 1) Main_loop()
+// 2) While() / for() -> Whenever you Want to READ Sensor Data using a LOOP 
+// this works perfectly - i tested at 104hz for 5sec and the count was 520 (exact)
+
+
+// ------------------------------------------------------------------------
+
+unsigned long lastRead = 0; // correct // assign at the time of defining 
+unsigned long now = 0;
+// lastRead = 0; // wrong - since in global only decalration is allowed not statements are not (reassigning a variable is a statement)
+// now = 0;
+
+void loop()
+{
+	now = micros();
+  if (now - lastRead >= PERIOD_US)
+  {
+	  lastRead = now;
+    
+	  if (myISM.getRawGyro(&rawGyroData)&&myISM.getRawAccel(&rawAccelData))
+    {
+		//   get data / code ...
+    }
+	
+  }
+}
+
+
+
+// ------------------------------------------------------------------------
+lastRead = 0; // reset before use
+// need to reset this at both -> before and after the loop (you will tell - but last may if we reset then why need to reset at top -> because since if Main function may bhi use hua hai LastRead and got updated, and then vaha say fun() call hua where we run this loop then last time ka values - use hoga on the first loop.... kuch fark nahi padega but its safe...)
+// so now you dont need to write lastRead =0 in the main loop before calling a function which has this kinda technique ka loop.
+while( condition -> N_samples / N_seconds / true / anyother condition.  )
+{
+	// Run loop as per Sensor Hz and not Run as fast as possible.
+    now = micros();
+    if (now - lastRead >= PERIOD_US)
+    {
+		lastRead = now;
+		
+		if (myISM.getRawGyro(&rawGyroData)&&myISM.getRawAccel(&rawAccelData))
+		{
+	  //   get data / code ... 
+		}
+
+    }
+}
+// After the loop Always retset these for further use in the codefile. 
+// if didnt reset then next time if we use these variables then it already contains some value. 
+lastRead = 0; // reset after use
+
+
+
+// Loop for getting N_samples from sensor -----------------------------------------------------------
+unsigned int count = 0;
+unsigned int N_samples = N; 
+lastRead = 0; // reset before use
+
+while (count < N_SAMPLES) 
+{
+	now = micros();
+    if (now - lastRead >= PERIOD_US)
+    {
+		lastRead = now;
+		
+		if (myISM.getRawGyro(&rawGyroData)&&myISM.getRawAccel(&rawAccelData))
+		{
+			//   get data / code ...
+			count++;
+		}
+		
+    }
+}
+lastRead = 0; // reset after use
+
+
+
+// Loop for getting samples for N_seconds from sensor -------------------------------------------------------
+unsigned long N_seconds = N; // 5 sec -> 5000
+unsigned long start = millis();
+lastRead = 0; // reset before use
+while (millis() - start < TIME_MS)
+{
+	  now = micros();
+	  if (now - lastRead >= PERIOD_US)
+    {
+      lastRead = now;
+	  
+      if (myISM.getRawGyro(&rawGyroData)&&myISM.getRawAccel(&rawAccelData))
+      {
+		  //   get data / code ...
+	  }
+		
+    }
+}
+lastRead = 0; // reset after use
+
+
+
+
+
+
+
 
 
 
@@ -638,18 +751,19 @@ myISM.setGyroFilterLP1(false); // strictly off
 // final acc settings
 // --------------------------------------------------
 // Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
-myISM.setAccelDataRate(ISM_XL_ODR_208Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
+// datarate -> 104 hz is good since fast and less noisy . and as you increase the Hz the noise also increase (not increases but noise occurs more)
+myISM.setAccelDataRate(ISM_XL_ODR_104z); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
 myISM.setAccelFullScale(ISM_2g); // always need to set range , even if scaling manually.
 // test: in Motor_code if motor moves faster than 2g then the sensor values can break - so in that senario we can do 4g or 8g or 250dps , etc  , but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
 myISM.setAccelFilterLP2(false); 
-// myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 10, 20. but best is to keep it off 
+// myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 20, 45 (not 10) // (if you keep the filter then based on the filter -> update the offset as per that)
 
 
 
 
 // final gyro settings
 // --------------------------------------------------
-myISM.setGyroDataRate(ISM_GY_ODR_208Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
+myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
 myISM.setGyroFullScale(ISM_125dps); //always need to keep on even if scalling manually.
 myISM.setGyroFilterLP1(false); // strictly off
 
@@ -677,8 +791,25 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 
 
 
-// setup() code for ISM
+// full Proper code for ISM
 // ----------------------------------------------------------------------------------------------------------
+
+
+#include <Wire.h>
+#include "SparkFun_ISM330DHCX.h"
+
+SparkFun_ISM330DHCX myISM;
+sfe_ism_raw_data_t rawAccelData;
+sfe_ism_raw_data_t rawGyroData;
+
+
+// IMP - so that loop run as per the data rate of sensor and not try to run as fast as possible 
+unsigned int DataRate_HZ;	
+unsigned long PERIOD_US;          
+// time tracker for loops -> mainLoop(), while() , for()     
+unsigned long lastRead = 0; 
+unsigned long now = 0;
+
 
 void setup() {
 	Wire.begin();
@@ -707,27 +838,28 @@ void setup() {
 	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
 	
 	// Range -> always need to set, even if scaling maunally
-	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
 	myISM.setAccelFullScale(ISM_2g); 
 	myISM.setGyroFullScale(ISM_125dps); 
+	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
 	// if you wanna update the range of acc or gyro then - not just you have to change the scaling factor , but again calib (as per that_range_lsb_data * that_range_scaling_factor) and get new offset.
-
-	// DataRate -> 
-	myISM.setAccelDataRate(ISM_XL_ODR_208Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
-	myISM.setGyroDataRate(ISM_GY_ODR_208Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
 	
+	// DataRate -> 104Hz is good (fast & low noise)
+	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
+	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
+	DataRate_HZ = 104; // keep same as sensor_Hz
+    PERIOD_US = (1000000UL / DataRate_HZ); // using this we Contorl the iteration time.
+
 	// Filter ->
-	myISM.setAccelFilterLP2(false); 
-	// myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 10, 20. but best is to keep it off 
+	myISM.setAccelFilterLP2(false); // can keep it ON also, // later, TRY : ON in SensorFusion and see the results. 
+    // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 20, 45 (not 10) // (if you keep the filter then based on the filter -> update the offset as per that)
 	myISM.setGyroFilterLP1(false); // strictly off
 	
 	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
 	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
 	
 	
-	.............
-	
-	
+	............. sensor hub , interrup pin , offset , etc seen .....
+
 	
 	delay(100);
     Serial.println("Settings applied.");
@@ -736,39 +868,72 @@ void setup() {
 
 
 
+void loop()
+{
+	now = micros();
+	if (now - lastRead >= PERIOD_US)
+	{
+		lastRead = now;
+		
+		if (myISM.getRawGyro(&rawGyroData)&&myISM.getRawAccel(&rawAccelData))
+		{
+			Serial.print("Accelerometer: ");
+			Serial.print("X: ");
+			Serial.print(rawAccelData.xData);
+			Serial.print(" ");
+			Serial.print(rawAccelData.yData);
+			Serial.print("Y: ");
+			Serial.print(" ");
+			Serial.print("Z: ");
+			Serial.print(rawAccelData.zData);
+			Serial.println(" ");
+			Serial.print("Gyroscope: ");
+			Serial.print("X: ");
+			Serial.print(rawGyroData.xData);
+			Serial.print(" ");
+			Serial.print("Y: ");
+			Serial.print(rawGyroData.yData);
+			Serial.print(" ");
+			Serial.print("Z: ");
+			Serial.print(rawGyroData.zData);
+			Serial.println(" ");
+		}
+		
+	}
+}
 
 
-
-
-
-
-
-
-
-
+// // ----to access Sensor data in other fucntion----: 
+// void fun()
+// {
+//	LastRead = 0; // reset before use
+// 	while( condition -> N_samples / N_seconds / true / anyother condition.  )
+// 	{
+//      // Run loop as per Sensor Hz and not Run as fast as possible.
+//      now = micros();
+//      if (now - lastRead >= PERIOD_US)
+//      {
+//			lastRead = now;
+//		    if (myISM.getRawGyro(&rawGyroData)&&myISM.getRawAccel(&rawAccelData))
+//       	{
+// 	  			//   get data / code ... 
+//       	}		
+//		 }
+// 	} 
+// 	lastRead = 0; // reset after use
+// 	}
+			
+			
+			
+			
+			
+			
 // ###################################################################################################
-// update these code in all ACC , Gryo ,  SF code files (Gothrough each code file, and read every line - ino/py both)
+// update these code in all ACC , Gryo , final_calib 
+// (Gothrough each code file, and read every line - ino/py both)
+			
+// update the loop in every ardu.ino file ACC -> all main() loop and every other loop  where we read sensor data.
+// only use the Hz timer loop technique where you are reading sensor data - should i also use it in in sf loop ? , etc.... ask gpt ??????????
 
 
-
-
-
-// in sf ->   // Note: we can't do prints inside the while loop. They slow things down too much... so print every 10th loop . 
-
-
-// tune beta / gain in SF (this matters more than filters)
-
-// verify ODR vs SF update rate
-
-// check why some axes show higher noise
-
-
-// /// for sf the most important thing is responsiveness . and any kind of delay make things bad. 
-// ex - you steer the car ,but tire takes 5 second to actually move. this was happening -> when it took 1 min by sf to come to read posi.
-// and if it tries to correct it then it ossicalates ->   0-> 100 then comes to 25 then 75 ... till it comes 50. 
-// So remove all things that does dealy or lowers responsiveness before giving the sensors data to sf  -> filter , printing linges every loop, distorting delays, non distorting delays ..... find out.... what this video https://www.mathworks.com/videos/control-systems-in-practice-part-4-why-time-delay-matters-1536913253300.html
-
-
-
-
-// gyro may joo ARW and Bias_instability calculate kiya that can be use in sf , kalman filter...
+// In 5_ardu_calib_acc code & 8_Auto_calib_acc code & 6_Auto_calib_gyro -> keeps all the above comments also. dont remove it. verna if you use that codefile (without comment wala) in another imp codefile -- then voo imp comment ka kuch fyda nahi 

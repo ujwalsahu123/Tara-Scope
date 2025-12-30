@@ -1,6 +1,11 @@
 make proper documentation of the project ( starpointer how works , each code file by file - explain.  )
+# ek architecture diagram banana hoga for the entire process (of the final working model) -> ex-> (calib process at startup / cmd given -> does scale , api call to noaa , calc the offset/ bias, caliberat , give to sf, ... ) (star alt az calc) (ai and rag system) (how madia/video is selected / tts , etc) (star allignment..) A big Architechure / Process diagram (high level but cover all)
+# and Ek full hardware connection ka diagram . (like stellector made)
+
 make working ka video on filed wala 
 make pitch video 
 write a reasearch paper : TaraScope - a star navigation system for stargazing
+
+
 
 .. think 

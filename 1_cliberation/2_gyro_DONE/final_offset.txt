@@ -1,0 +1,13 @@
+dont use these bias - its better to calc the bias after every startup
+
+first 5sec bias:- 
+
+125dps_nofilter bias:-
+bx = 0.193792 dps
+by = -0.741340 dps
+bz = 0.315934 dps
+
+250dps_nofilter bias:-
+bx = 0.202787 dps
+by = -0.751277 dps
+bz = 0.323663 dps

@@ -33,7 +33,7 @@
 # For sf -> 
 # keep the acc filter minimum and gyro filter off, since sf also does filtering and averaging
 # for sf -> responsiveness > smoothness
-# keep acc -> off
+# keep acc -> off , 20 , 45
 # keep gryo -> off
 
 # for other applictions -> viberation analysis , etc - you can keep filters as per that.
