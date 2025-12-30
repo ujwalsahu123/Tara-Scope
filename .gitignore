@@ -6,6 +6,6 @@
 # Ignore specific directories
 
 # Ignore .txt files in analysis big data folders
-1_cliberation/acc/Analysis_big_data/*.txt
-1_cliberation/gyro/Analysis_big_data/*.txt
+1_cliberation/1_acc/Analysis_big_data/*.txt
+1_cliberation/2_gyro/Analysis_big_data/*.txt
 
