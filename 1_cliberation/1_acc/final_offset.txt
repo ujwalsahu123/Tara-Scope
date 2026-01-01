@@ -1,95 +1,166 @@
-***No Calib 
 
+
+(Raw) without Calib:---------------------------------------------------------------------
 # Avg magnitude on manual collected 2g_100filter data => 0.9992114273274656
 # Avg magnitude on motor_code 2g_100filter => 0.9996689866328226
 # Magnitude on live data => 1.006 
-# here we cannot calculate the error since its not calib and we didnt give it any g like 1g or 0.97..g
+# here we cannot calculate the error since its not calib and we didnt give it any g like 1g or 0.97..g - so cannot compare the magnitude with anything.
+# but without Calib also the values are fine. but need to do calib.
 
 
-##############################################################################3
-****using Manually collected data for caliberatin offset ka conclusion -
-
-Magneto -> 1g:
-2g_100filter:-----------------------------------
-# Avg magnitude after caliberation, on the Manually collected data (data_scaled_to_g.txt) =>  0.9999989067576526 (-0.000002 error)
-# Magnitude on live data => 1.000 (0 error)
-
-A = np.array([[0.996986, 0.000024, -0.000549], 
-              [0.000024, 1.001778, 0.000595],
-              [-0.000549, 0.000595, 1.003680]])
-
-b = np.array([0.005380, -0.014230, 0.009798])
+my local_g -> 0.97859
 
 
-Magneto -> 0.978593:
-2g_100filter:-----------------------------------
-# Avg magnitude after caliberation, on the Manually collected data (data_scaled_to_g.txt) =>   0.97859170335328 (-0.000002 error)
-# Magnitude on live data => 0.979 (+0.001 error)
+##############################################################################
+using Manually collected data for calibration offset ka conclusion - (dont use these data use using_motor wala)
 
-A = np.array([[0.975643, 0.000023, -0.000537], 
-              [0.000023, 0.980333, 0.000583],
-              [-0.000537, 0.000583, 0.982194]])
+2g_100filter:----------------------------------- (g = 1)
+Average calibrated magnitude: 0.9999974426
+Error: between Magnitude and g :  -2.557444624962102e-06
+Live Data Magnitude: 0.999 (error: 0.001 ) 
 
-b = np.array([0.005380, -0.014230, 0.009798])
+# A = np.array([
+#   [0.99698429, 0.00002374, -0.00054901],
+#   [0.00002374, 1.00177671, 0.00059542],
+#   [-0.00054901, 0.00059542, 1.00367859],
+# ])
+
+# b = np.array([0.00538023, -0.01423016, 0.00979774])
+
+
+2g_100filter:----------------------------------- (g = 0.97859)
+Average calibrated magnitude: 0.9785874973
+Error: between Magnitude and g :  -2.5026897358948474e-06
+Live Data Magnitude: 0.978  (error: 0.001) 
+
+# A = np.array([
+#   [0.97563886, 0.00002323, -0.00053726],
+#   [0.00002323, 0.98032867, 0.00058267],
+#   [-0.00053726, 0.00058267, 0.98218983],
+# ])
+
+# b = np.array([0.00538023, -0.01423016, 0.00979774])
 
 
 
 ####################################################################################################
-***** using Manually collected data for caliberatin offset ka conclusion - 
-
-Magneto : 1g
-2g_100filter:-----------------------------------
-# Avg magnitude after caliberation, on the Using_Motor data => 0.9999998452420021 (-0.00000015 error)
-# Magnitude on live data => 0.998 (-0.002 error)
-
-A = np.array([[ 0.996484,0.000073 , -0.000626], 
-              [ 0.000073,1.001848 , 0.000512],
-              [-0.000626 ,0.000512 , 1.003775]])
-
-b = np.array([  0.006146, -0.014495,0.011460 ])
+using Motor collected data for calibration offset ka conclusion - 
 
 
-Magneto : 0.978593 
-2g_100filter:------------------------------------
-# Avg magnitude after caliberation, on the Using_Motor data => 0.9785931526980024 (+0.00000015 error)
-# Magnitude on live data => 0.977 (-0.001 error)
+2g_0filter:----------------------------------- (g = 1)
 
-A = np.array([[ 0.975153, 0.000071, -0.000613], 
-              [0.000071 , 0.980402, 0.000501],
-              [ -0.000613, 0.000501, 0.982287]])
+Average calibrated magnitude: 0.9999999688
+Error: between Magnitude and g :  -3.123421965511852e-08
+Live Data Magnitude: 1.00   (error: 0.001) 
 
-b = np.array([ 0.006146,-0.014495 , 0.011460])
+# A = np.array([
+#   [0.99656024, 0.00009547, -0.00060211],
+#   [0.00009547, 1.00212137, 0.00054208],
+#   [-0.00060211, 0.00054208, 1.00381400],
+# ])
+
+# b = np.array([0.00500114, -0.01523379, 0.01161619])
+
+2g_0filter:----------------------------------- (g = 0.97859)
+Average calibrated magnitude: 0.9785899694
+Error: between Magnitude and g :  -3.056549502389316e-08
+Live Data Magnitude: 0.97   (error:0.001 ) 
+
+# A = np.array([
+#   [0.97522389, 0.00009342, -0.00058922],
+#   [0.00009342, 0.98066595, 0.00053047],
+#   [-0.00058922, 0.00053047, 0.98232234],
+# ])
+
+# b = np.array([0.00500114, -0.01523379, 0.01161619])
 
 
+2g_20filter:----------------------------------- (g = 1)
+Average calibrated magnitude: 0.9999999735
+Error: between Magnitude and g :  -2.6466959957005542e-08
+Live Data Magnitude: 1.000  (error: 0.001 ) 
 
+# A = np.array([
+#   [0.99651463, 0.00007389, -0.00053367],
+#   [0.00007389, 1.00205753, 0.00062802],
+#   [-0.00053367, 0.00062802, 1.00379968],
+# ])
 
-Magneto : 1g
-2g_NOfilter:-------------------------------------
-# Avg magnitude after calibration, on the Using_Motor data => 
-# Magnitude on live data =>
-
-A = np.array([[ , , ], 
-              [ , , ],
-              [ , , ]])
-
-b = np.array([ , , ])
-
-
-Magneto : 0.978593
-2g_NOfilter:------------------------------------
-# Avg magnitude after calibration, on the Using_Motor data => 
-# Magnitude on live data =>
-
- np.array([[ , , ], 
-              [ , , ],
-              [ , , ]])
-
-b = np.array([ , , ])
+# b = np.array([0.00497630, -0.01534547, 0.01171263])
 
 
 
+2g_20filter:----------------------------------- (g = 0.97859)
+Average calibrated magnitude: 0.9785899741
+Error: between Magnitude and g :  -2.590030334648219e-08
+Live Data Magnitude: 0.979  (error: 0.001 ) 
+
+# A = np.array([
+#   [0.97517926, 0.00007230, -0.00052225],
+#   [0.00007230, 0.98060348, 0.00061457],
+#   [-0.00052225, 0.00061457, 0.98230833],
+# ])
+
+# b = np.array([0.00497630, -0.01534547, 0.01171263])
 
 
+
+2g_45filter:----------------------------------- (g = 1)
+
+Average calibrated magnitude: 0.9999999712
+Error: between Magnitude and g :  -2.882162031259128e-08
+Live Data Magnitude: 1.000   (error: 0.001 ) 
+
+# A = np.array([
+#   [0.99649798, 0.00008092, -0.00057611],
+#   [0.00008092, 1.00202301, 0.00064745],
+#   [-0.00057611, 0.00064745, 1.00377073],
+# ])
+
+# b = np.array([0.00515788, -0.01514299, 0.01148994])
+
+
+
+2g_45filter:----------------------------------- (g = 0.97859)
+Average calibrated magnitude: 0.9785899718
+Error: between Magnitude and g :  -2.8204549362698117e-08
+Live Data Magnitude: 0.979 (error: 0.001) 
+
+# A = np.array([
+#   [0.97516296, 0.00007919, -0.00056377],
+#   [0.00007919, 0.98056970, 0.00063359],
+#   [-0.00056377, 0.00063359, 0.98228000],
+# ])
+
+# b = np.array([0.00515788, -0.01514299, 0.01148994])
+
+
+
+2g_100filter:----------------------------------- (g = 1)
+Average calibrated magnitude: 0.9999999197
+Error: between Magnitude and g :  -8.030612819176497e-08
+Live Data Magnitude: 1.001 (more smoother) (error:0.001 ) 
+
+# A = np.array([
+#   [0.99648426, 0.00007280, -0.00062619],
+#   [0.00007280, 1.00184845, 0.00051247],
+#   [-0.00062619, 0.00051247, 1.00377465],
+# ])
+
+# b = np.array([0.00614609, -0.01449525, 0.01145960])
+
+2g_100filter:----------------------------------- (g = 0.97859)
+Average calibrated magnitude: 0.9785899214
+Error: between Magnitude and g :  -7.858677419925186e-08
+Live Data Magnitude: 0.979  (error: 0.001 ) 
+
+# A = np.array([
+#   [0.97514953, 0.00007124, -0.00061278],
+#   [0.00007124, 0.98039887, 0.00050150],
+#   [-0.00061278, 0.00050150, 0.98228384],
+# ])
+
+# b = np.array([0.00614609, -0.01449525, 0.01145960])
 
 
 
@@ -106,46 +177,85 @@ b = np.array([ , , ])
 # we will use no filter wala offset or filter wala ? 
 -> if we use 100_filter in inference then need to use 100_filter wala calib, 
 -> and if we use No_filter in inference then need to use NO_filter wala calib,
--> so as per inference filter you will use - you we need to use that same filter for calib
--> we will use no Filter thus no filter wala calib we will use (so we use using_motor No_filter wale data ka calib-offset and bias)
+-> so as per inference filter we use - we need to use that same filter wala offset/bias.
+-> For SF we will use no Filter thus no filter wala calib we will use (so we use using_motor No_filter wale data ka calib-offset and bias)
+-> #(but i am not sure on this - since filtering does averaging and while collecting data we also did 25 read Avg.) 
+-> #(can we do - single offset/bias can be used for any filter?) 
+-> NO for differnt filters use offset/bias as per that. dont use single , since differnt filters has differnt offset/bias
+-> so as per inference filter we use - we need to use that same filter wala offset/bias.
+
+
+# should we do Manual data collection or using motor ?
+-> use motor calib since its more better -> as we can see that the AVG Magnitude error of 2g_100filter_manually is 2e-6, and 2g_100filter_using_motor is 2e-8 (much accurate)
+-> so dont use the manually collected data ka offset/bias , use only the using_motor. and furter also collect the data using motor only.
 
 # we will use 1g or local_g in magneto ? and does it matter what g we use ? 
 -> yes it matters you can use 1g in magneto or local_g - and as per that the magneto will give you offset and bias 
 -> and that offset and bias will try to make the Magnitude close to that g.
 -> ex- if 1g then it will try to make the (raw math calib) close to 1g
 -> ex- if 0.978g then it will try to make the (raw math calib) close to 0.978g
--> 1g vs Local_g which has less noise ? -> both have exact similar noise after calib, (+-0.00000015 error on Avg Magnitude) (- 0.001 error on live magnitude).  which is super less. 
--> so the main question is does using local_g increase accuracy ? -> ???????????????????????????????
-
-(if local_g increases then we need to do Auto_calib_g , else not)
-
-
--> so final 
--> we do calibration 
--> use No_filter data for calculating calibration offset (since inference may bhi we dont apply filter)
--> use Motor_calib code since manually kon karega - and its worst . motor wala is way more precise since no handshakes, etc. 
--> 1g vs local_g ->   ??????????????????????
+-> 1g vs Local_g which has less noise ? -> both have exact similar noise after calib, as you can see above that.
+-> ex -> 2g_0filter (at 1g and 0.98759g) both ka magnitude are closest to its g and has almost same error (2e-8 error on Avg Magnitude) (- 0.001 error on live magnitude).  which is super small.
+-> also the Live Magnitude ka error is same for 1g or local_g. (error : 0.001 for all -> this also show that the Noise is much bigger then the precision we are playing in)
+-> so either you use 1_g or local_g both are super precise. 
+-> so the main question is does - using local_g increase accuracy of RPY -> Yes
+-> for our super precise and accurary starpointing we need to go with Local_g. 
+-> (for other application like drone,etc use 1g, but we want super accurate RPY we need to use local_g)
 
 
-
-////////////////////////////////  to do   /////////////////////////////////////////////////
-// Read this full .txt file 
-// first gpt see and know which is better 1g or local_g (mostly many people on internet used the local_g - including Adafulit offical blog in acc calib)
-
-// and again need to calib the acc using motor. -> 2g, 104hz , for each filter -> no, 20 , 45. (not10)
-// so run code_python.py  /// or collect data from serial monitor 
-// get data as per differnt filter -> no , 20 , 45  (not 10)  -> at 104hz... and store in differnt files.txt....
-// and inn sabka offset likh in final_offset.txt (using 1g or local_g ????)
-// then see avg magnitude and live magnitude for 2g_nofilter both -> (1g and local_g) and update kar (magnitude,error) upar in final_offset.txt
+# XTRA:
+if you use local_g then we need to do Auto_calib_g -> since suppose we calculated the offset and bias at x location where the local_g is xg , and if we go to y loation where the local_g is gy then we cant use that gx ka offset/bias. 
+soo we need to calculate offset/bias again using the local_g of y place. 
+also we cant do like -> use the old data point of x location and bas gy laga kay calculate kia - NO. need to collect the data also agian at y location and use gy to get correct offset/bias of y location.
 
 
 
+*******************************************************************************************************
+#  so final decision :-
+-> we should do calibration 
+-> use Motor for collecting data, and use our_code_7_calc_accel for calculating offset and bias.
+-> use No_filter/20_filter/etc_filter ka offset_&_bias -> AS PER -> inference par joo filter hai. 
+-> 1g vs local_g ->  Local_g  (both are same precise (2e-8 error), but Local_g is better for getting super Accurate RPY - and we want Accuracy)
+-> for New location -> calculate New data (using_motor) and use the local_g -> to calculate the new offset/bias.
+-> for 1 location just calib 1-TIME and use that offset/bias. (use that local_g and set the filter when collecting the data as per you want/want to use in inference time.)
+
+--> so use these below offsets/bias - for calibration (for home location/miraroad) as per the filter you use.
+
+
+2g_0filter:----------------------------------- (g = 0.97859)
+# A = np.array([
+#   [0.97522389, 0.00009342, -0.00058922],
+#   [0.00009342, 0.98066595, 0.00053047],
+#   [-0.00058922, 0.00053047, 0.98232234],
+# ])
+# b = np.array([0.00500114, -0.01523379, 0.01161619])
+
+
+2g_20filter:----------------------------------- (g = 0.97859)
+# A = np.array([
+#   [0.97517926, 0.00007230, -0.00052225],
+#   [0.00007230, 0.98060348, 0.00061457],
+#   [-0.00052225, 0.00061457, 0.98230833],
+# ])
+# b = np.array([0.00497630, -0.01534547, 0.01171263])
+
+
+2g_45filter:----------------------------------- (g = 0.97859)
+# A = np.array([
+#   [0.97516296, 0.00007919, -0.00056377],
+#   [0.00007919, 0.98056970, 0.00063359],
+#   [-0.00056377, 0.00063359, 0.98228000],
+# ])
+# b = np.array([0.00515788, -0.01514299, 0.01148994])
+
+
+2g_100filter:----------------------------------- (g = 0.97859)
+# A = np.array([
+#   [0.97514953, 0.00007124, -0.00061278],
+#   [0.00007124, 0.98039887, 0.00050150],
+#   [-0.00061278, 0.00050150, 0.98228384],
+# ])
+# b = np.array([0.00614609, -0.01449525, 0.01145960])
 
 
 
--> so final offset ..... 
--> ....   using_motor/nofilter/1g   or  using_motor/nofilter/local_g   inme say koi ek ka offset we use - as per (1g vs local_g)
-
- ... and also write 20_filter, 45_filter ka offset for (1g or local_g) also here 
-
-update the new offset in 5_ardu_calib_acc 8_Auto_calib_acc.ino

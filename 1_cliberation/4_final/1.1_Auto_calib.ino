@@ -1,3 +1,8 @@
+//// read the below writting and make it proper...
+
+
+
+
 // This code Prints Scaled & Caliberated ACC, GYRO, MAG data 
 // Acc is already calib, So It does Mag and Gyro calib after startup
 // use the Manual_calib code in sf and Auto_calib code in 3_full_motor_code.

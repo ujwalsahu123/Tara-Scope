@@ -1,6 +1,14 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
+/// same as 8_Auto_calib_acc.ino code file. (also refer acc/using_motor/1,2_codefile)
+/// do this after mag full done.
+
+
+///// Read and update the below Note/my writting to proper note/process ------------
+
+
+
 // so what we are doing currently  is -> using non_blocking or blocking and using py to store the data and then using Magnetor to find offsets and then use that offset to do mag calib . 
 
 // so here we write the code - which -> moves motor and stores scaled_data points in a array,etc  and then there are parameters/ variables like - Earth_mag_field, etc what magnetor used to take. 

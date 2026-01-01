@@ -15,18 +15,14 @@ SparkFun_ISM330DHCX myISM;
 // Define the structure for raw accelerometer data
 sfe_ism_raw_data_t rawAccelData;
 
-
-
-// Define calibration parameters
-const double A[3][3] = { // Calibration matrix
-    {0.996986, 0.000024, -0.000549},
-    {0.000024, 1.001778, 0.000595},
-    {-0.000549, 0.000595, 1.003680}
+// Hardcoded offset and bias - (g_2g_Nofilter) // change it as per filter you use
+double A_acc[3][3] = {
+{0.97522389, 0.00009342, -0.00058922},
+{0.00009342, 0.98066595, 0.00053047},
+{-0.00058922, 0.00053047, 0.98232234}
 };
 
-const double b[3] = { // Bias vector
-    0.005380, -0.014230, 0.009798
-};
+double b_acc[3] = { 0.00500114, -0.01523379, 0.01161619}; 
 
 void setup() {
     Wire.begin();
@@ -58,31 +54,47 @@ void setup() {
     Serial.println("Settings applied.");
 }
 
+double calib[3] = {0.0, 0.0, 0.0};
+double rawX;
+double rawY;
+double rawZ;
+long lastRead = 0;
+long now = 0;
+int DataRate_HZ = 104; // keep same as sensor_Hz
+long PERIOD_US = (1000000UL / DataRate_HZ);
+double magnitude;
+
+
 void loop() {
+    
+
+  now = micros();
+  if (now - lastRead >= PERIOD_US)
+  {
+    lastRead = now;
+
     // Get raw accelerometer data
     if (myISM.getRawAccel(&rawAccelData)) {
-        // Convert raw LSB values to g, using *0.00006103515625. 
-        // (we are not doing 0.061 since that's mg not g. and the sf wants g . dont do 0.000061, since that has binary representation noise)
 
-        double rawX = (rawAccelData.xData) * 0.00006103515625;
-        double rawY = (rawAccelData.yData) * 0.00006103515625;
-        double rawZ = (rawAccelData.zData) * 0.00006103515625;
+        // -------- LSB -> SCALE TO g  --------
+        // (we are not doing 0.061 since that's mg not g. and the sf wants g . dont do 0.000061, since that has binary representation noise)
+        rawX = (rawAccelData.xData) * 0.00006103515625;
+        rawY = (rawAccelData.yData) * 0.00006103515625;
+        rawZ = (rawAccelData.zData) * 0.00006103515625;
 
         // Apply calibration: h_calib = A * (h_meas - b)
-        double meas[3] = {rawX, rawY, rawZ};
-        double calib[3] = {0.0, 0.0, 0.0};
 
-        // Subtract bias and apply matrix multiplication
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                calib[i] += A[i][j] * (meas[j] - b[j]);
-            }
-        }
+        // -------- SCALED -> CALIB --------
+        // -------- Raw_g -> CALIB using offset/bias_g -> Calib_g  --------
+        calib[0] = A_acc[0][0] * (rawX - b_acc[0]) + A_acc[0][1] * (rawY - b_acc[1]) + A_acc[0][2] * (rawZ - b_acc[2]);
+        calib[1] = A_acc[1][0] * (rawX - b_acc[0]) + A_acc[1][1] * (rawY - b_acc[1]) + A_acc[1][2] * (rawZ - b_acc[2]);
+        calib[2] = A_acc[2][0] * (rawX - b_acc[0]) + A_acc[2][1] * (rawY - b_acc[1]) + A_acc[2][2] * (rawZ - b_acc[2]);
+
 
         // Calculate magnitude of the calibrated vector
         // at static position the magnitude should be same as g value
 
-        double magnitude = sqrt(calib[0] * calib[0] + calib[1] * calib[1] + calib[2] * calib[2]);  // no need to do in sf.
+        magnitude = sqrt(calib[0] * calib[0] + calib[1] * calib[1] + calib[2] * calib[2]);  // no need to do in sf.
 
         // Print calibrated data (X, Y, Z) and the magnitude // in sf we will not print it , but give it to the sf. 
         Serial.print("Calibrated X: ");
@@ -97,4 +109,13 @@ void loop() {
         Serial.println("Failed to read raw accelerometer data.");
     }
 }
+
+
+
+
+
+
+
+
+
 

@@ -38,7 +38,7 @@ b = np.array([0.005380, -0.014230, 0.009798])
 
 # Read data and apply calibration and plot 
 ################## file name ##############################
-rawData = np.genfromtxt('using_motor/data.txt', delimiter='\t')  # raw measurement file
+rawData = np.genfromtxt('using_motor/data_g_2g_0filter.txt', delimiter='\t')  # raw measurement file
 units = 'G\'s'  # units of accelerometer measurements (used for axis labels)
 
 N = len(rawData)

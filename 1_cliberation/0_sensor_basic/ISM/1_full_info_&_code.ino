@@ -707,7 +707,7 @@ while (count < N_SAMPLES)
 		
     }
 }
-lastRead = 0; // reset after use
+lastRead = 0; // reset after  use
 
 
 

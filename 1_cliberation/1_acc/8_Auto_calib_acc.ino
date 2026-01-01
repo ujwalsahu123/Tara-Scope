@@ -1,10 +1,23 @@
+
+ 
+
+
+
+/// update this ........  NOTES as per the code....... (CODE IS DONE)
+
+
+/// also test kar lena ek bar - since have not tested this code yet. (but it should work)
+
+
+
+
+
 // we can do auto_calc the offset / bias using data points that we have -> as per the currect location ka gravity. 
 // same as magneto , but for more precision we use current location ka g and not 1g . 
 // so bar bar location ka g nikalna and manually give to magnetor and offset copy paste say acccha
 // we can use the location api and noaa api for height . and use the g_calculator api and give it locaiton and height to get our G . 
-// and then in the calc_acc function we can use our stored_data (hardcode - our collected datapoints)
 
-//  i think i need to collect new data also yaa puranay wale say kam chal jaygaa ? (since old data was collected where g was differnt...)
+// i think i need to collect new data also yaa puranay wale say kam chal jaygaa ? (since old data was collected where g was differnt...)
 // also check Magnetor offset/ bias on my manually collected data as per -> 1g vs 0.97...(current location ka g)  both kay offset compare - kitna fark hai.
 // there is minute fark but local g is better... for sure. i saw the internet.
 // and we can collect the data also (not a big deal) - sleeping position may rakhna hoga the device (since we get orientations) 
@@ -76,8 +89,8 @@
 #include <CheapStepper.h>
 
 SparkFun_ISM330DHCX myISM;
-CheapStepper motorA(4, 5, 6, 7);
-CheapStepper motorB(8, 9, 10, 11);
+CheapStepper motorAlt(4, 5, 6, 7);
+CheapStepper motorAz(8, 9, 10, 11);
 
 sfe_ism_raw_data_t rawAccel;
 
@@ -88,42 +101,46 @@ unsigned long now = 0;
 
 // #######################   CONFIG   ####################### 
 #define ACC_LSB_TO_G 0.00006103515625f   // 2g range
-#define AVG_MEAS    25
-#define DEG_to_move    5 ////////////// Each 5-deg par readings laygaa (update if you want)
-const int Moves = 380 / deg_to_move ;   
-#define STEPS_PER_REV 4096
-// Hardcoded offset and bias
-double acc_bias[3] = {  0.005380, -0.014230, 0.009798 }; 
-double A[3][3] = 
-{   {0.996986, 0.000024, -0.000549},
-    {0.000024, 1.001778, 0.000595},
-    {-0.000549, 0.000595, 1.003680}     };
+#define AVG_MEAS  25 // take Avg of N readings to get 1 stable reading /per orientation.
+
+#define AVG_MEAS  25 // take Avg of N readings to get 1 stable reading /per orientation.
+const int STEPS_PER_REV = 4096;
+const int N_orientations = 64 ;
+//SET THIS //(value must be -> 2^N). [VALUES -> (1 = 360Deg) (2 = 180Deg) (4 = 90Deg) (8 = 45Deg) (16 = 22.5Deg) (32 = 11.25Deg) (64 = 5.625Deg) (128 = 2.8125Deg) (256 = 1.4Deg)]
+const int STEPS_to_move_per_orientation = (STEPS_PER_REV / N_orientations) ;
+// So if 4096/1_orientation => so 4096_steps_per_orientation to complete 1 full rotation. if 4096/2_orientaitons => so 2048_step)per_orientation and it will take 2 orientatins to complete 1 full rotation.      
+
+// Hardcoded offset and bias - (g_2g_Nofilter_0.97859) 
+// change it as per filter you use.
+// 1 time Calib when in new Location. 
+double A_acc[3][3] = 
+{{0.97522389, 0.00009342, -0.00058922},
+ {0.00009342, 0.98066595, 0.00053047},
+ {-0.00058922, 0.00053047, 0.98232234}};
+double b_acc[3] = { 0.00500114, -0.01523379, 0.01161619}; 
 // ##########################################################
 
-
+double rawX ;
+double rawY ;
+double rawZ ;
+double calibAccel[3] = {0.0, 0.0, 0.0};
 
 // --------------------------------------------------
 // CALCULATE ACCEL BIAS USING MOTOR
 // --------------------------------------------------
-void calc_acc_bias()
-{
-  long sumX = 0, sumY = 0, sumZ = 0;
-  int samples = 0;
 
-  Serial.println("\n--- ACC CALIBRATION START ---");
-  delay(1000);
-  
-  // MOVEMENT 1
-  for (int i = 0; i < Moves; i++)  // take reading for full circle - as per Moves and Degrees_to_move
-  { 
-    delay(2000);
-     
-    long ax = 0, ay = 0, az = 0;
-    
-    // take 25 readings ka AVG - for single orientation.
-    int count = 0;
+int count = 0;
+long ax = 0, ay = 0, az = 0; // Make Avg calculation 0 - before storing new avg calculations.
+
+// function to calculte the avg readings and print it.
+void Read_Accel_data()
+{
+    ax = 0; ay = 0; az = 0; // Make Avg calculation 0 - before storing new avg calculations.
+    now = 0;
     lastRead = 0;
-    while (count < AVG_MEAS)  // dont worry it will take N readings as per AVG_MEAS at 104/particual hz.
+    count = 0;
+    // take 25 readings ka AVG - for single orientation.
+    while (count < AVG_MEAS)  // take Multiple readings ka AVG - for single orientation - at particular Hz.
     {
         now = micros();
         if (now - lastRead >= PERIOD_US)
@@ -138,15 +155,13 @@ void calc_acc_bias()
             }
         }
     }
-    lastRead = 0;
-
 
     // find AVG
     ax /= AVG_MEAS;
     ay /= AVG_MEAS;
     az /= AVG_MEAS;
 
-    // Send RAW LSB ONLY
+    // Send AVG RAW LSB ONLY , and in python it will scale
     Serial.print(ax);
     Serial.print(",");
     Serial.print(ay);
@@ -156,42 +171,96 @@ void calc_acc_bias()
     // cannot do calculation of ACC offset and bias over here .
     // so we simply print the raw values and python collects these datapoint and scales it then calculate the offset and bias and stores it in offset.txt
     // and then the arduino asks for the updated offset and bais and python gives it . and then arduino updates the offset and bias values here and gives calib_data as per the updated once.
-
-
-    samples++; // so that later we can print the number of samples we collected. or other use... // if not in use then remove it.
-    
-    delay(100); 
-    motorA.moveDegrees(true, DEG_to_move); // move to next orientation or current movement.
-    delay(100);
-  }
-  motorA.moveDegrees(false, 380); // return to inital position
+    // imp -> problem -> the offset that we calculate in python has 10 decimals but arudino cannot take 10 decimals i think -- check how much decimals can the aruino float store .... and as per that we send round off till 6 or 7 decimal place ka offset and bias we send here.
+}
 
 
 
-///////////  NOW
-/// Movement 2 , 3 later implement.
-////// implement 2nd roataion -> az motor (and dont return to initial posi )
-////// then 3rd rotation -> move alt motor by 90 deg (or 4096/4) and then az motor moves movement but this in opposite direction
+
+//--------------------------------------
+// Function which uses 2_motors to collecte the Acc data at differnt orientations
+void calc_acc_offset()
+{
+ 
+  Serial.println("\n--- ACC CALIBRATION START ---");
+  delay(1000);
+
+      //////////////////////////// MOVEMENT 1 -> Alt motor full rotation - from Initial orientation
+      for (int i = 0; i < N_orientations ; i++)  // take reading for full circle - 
+      { 
+        if(i == 0)
+        {
+          delay(2000); // keep
+          Read_Accel_data(); // initail read before moving the motor (since it moves the motor first and then reads)
+        }
+
+        // first Motor-move and then take readings.
+        delay(200); // keep
+        motorAlt.move(true, STEPS_to_move_per_orientation); // move to next orientation of current movement.
+        delay(2000); // 2 sec delay to stabalize the vibration, after motor has moved to the new position.
+        Read_Accel_data();
+      }
+
+      delay(1000);
+      motorAlt.move(false, STEPS_PER_REV ); // return to inital position of Movement 1
+
+
+      ////////////////////////// Movement 2 -> AZ motor full rotation - From initial orientation. 
+      for (int i = 0; i < N_orientations ; i++)  
+      { 
+        if(i == 0)
+        {
+          delay(2000); // keep
+          Read_Accel_data(); 
+        }
+        
+        delay(200); // keep
+        motorAz.move(false, STEPS_to_move_per_orientation); // move to next orientation of current movement. using AZ motor .
+        delay(2000); // 2 sec delay to stabalize the vibration, after motor has moved to the new position.
+        Read_Accel_data();
+      }
+
+      // no need to return to initial posi now, we first go to movement3 starting position.
+      delay(1000);
+      motorAlt.move(true, (STEPS_PER_REV/4)); // Rotate alt motor +90 deg.
+
+      ////////////////////////////////// Movement 3 -> Rotate alt motor by 90 deg or 4096/4, then AZ motor full rotation in opposite direction this time.
+      for (int i = 0; i < N_orientations ; i++) 
+      { 
+        if(i == 0)
+        {
+          delay(2000); // keep
+          Read_Accel_data(); 
+        }
+
+        delay(200); // keep
+        motorAz.move(true, STEPS_to_move_per_orientation); // move to next orientation of current movement. Using AZ motor (opposite this time)
+        delay(2000); 
+        Read_Accel_data();
+      }
+      delay(1000);
+      motorAlt.move(false, (STEPS_PER_REV/4)); // move the alt motor back to -90 degree (back to inital orientation)
+      // So now we are OG back to OG inital orientation.
+      
+      delay(1000);
 
 
 
 ///// NOT HERE -> do in final_calib
 /////////// ask python for the updated bias and offset values. 
+///////// and update the hardcoded offset and bias. and print also
 
-///// NOT HERE -> do in final_calib
-///////// update the hardcoded offset and bias. and print
 //   acc_bias[0] = ;
 //   acc_bias[1] = ;
 //   acc_bias[2] = ;
-
 //   Serial.println("Updated offset and bias ");
 //   Serial.print("bx = "); Serial.print(acc_bias[0], 6) .....;
 // //   .........
-// Serial.print(samples);
 
 
-  Serial.println("--- CALIBRATION DONE ---\n");
-  delay(500);
+
+  Serial.println("--- Accel CALIBRATION DONE ---\n");
+  delay(1000);
 }
 
 // --------------------------------------------------
@@ -241,8 +310,10 @@ void setup()
 	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
 	
     
-  motorA.setTotalSteps(STEPS_PER_REV);
-  motorA.setRpm(12);
+  motorAlt.setTotalSteps(STEPS_PER_REV);
+  motorAlt.setRpm(10); // 6 to 24
+  motorAz.setTotalSteps(STEPS_PER_REV);
+  motorAz.setRpm(10); // 6 to 24
 
 	delay(100);
   Serial.println("Settings applied.");
@@ -257,7 +328,11 @@ void setup()
 
   Serial.println("Using hardcoded gyro bias.");
   Serial.println("Send 'l' over Serial to recalibrate Accel.");
-  delay(500);}
+  delay(500);
+}
+
+
+
 
 // --------------------------------------------------
 // LOOP
@@ -268,16 +343,19 @@ void loop()
   {
     char cmd = Serial.read();
 
+    // Clear the buffer - (newline, extra keys, etc) 
+    // so that during the calibration is being done - No key press are recoded. 
+    // (other wise while calib you pressed l l l again then after calib it will again do calib 3 more times, since its in the buffer)
+    while (Serial.available()) Serial.read();
+
     switch (cmd)
     {
-      case 'j':
-        Serial.println("\n--- Gyro Calibration Triggered ---");
-        calc_gyro_bias();
+      case 'l':
+        Serial.println("\n--- Accel Calibration Triggered ---");
+        calc_acc_offset();
         break;
 
       default:
-        Serial.print("Unknown command: ");
-        Serial.println(cmd);
         break;
     }
   }
@@ -288,34 +366,32 @@ void loop()
     lastRead = now;
 
     if (myISM.getRawAccel(&rawAccel))
-    {
+    {   
+      // first scale then calib with scaled_offset/bias.
+
         // -------- LSB -> SCALE TO g  --------
         // (we are not doing 0.061 since that's mg not g. and the sf wants g . dont do 0.000061, since that has binary representation noise)
-        double rawX = (rawAccel.xData) * ACC_LSB_TO_G ;
-        double rawY = (rawAccel.yData) * ACC_LSB_TO_G;
-        double rawZ = (rawAccel.zData) * ACC_LSB_TO_G;
+        rawX = (rawAccel.xData) * ACC_LSB_TO_G ;
+        rawY = (rawAccel.yData) * ACC_LSB_TO_G;
+        rawZ = (rawAccel.zData) * ACC_LSB_TO_G;
 
         // -------- SCALED -> CALIB --------
-        double meas[3] = {rawX, rawY, rawZ};
-        double calib[3] = {0.0, 0.0, 0.0};
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                calib[i] += A[i][j] * (meas[j] - b[j]);
-            }
-        }
+        // -------- Raw_g -> CALIB using offset/bias_g -> Calib_g  --------
+        calibAccel[0] = A_acc[0][0] * (rawX - b_acc[0]) + A_acc[0][1] * (rawY - b_acc[1]) + A_acc[0][2] * (rawZ - b_acc[2]);
+        calibAccel[1] = A_acc[1][0] * (rawX - b_acc[0]) + A_acc[1][1] * (rawY - b_acc[1]) + A_acc[1][2] * (rawZ - b_acc[2]);
+        calibAccel[2] = A_acc[2][0] * (rawX - b_acc[0]) + A_acc[2][1] * (rawY - b_acc[1]) + A_acc[2][2] * (rawZ - b_acc[2]);
 
         // ------- Calculate magnitude of the calibrated vector
         // at static position the magnitude should be same as g value
-        double magnitude = sqrt(calib[0] * calib[0] + calib[1] * calib[1] + calib[2] * calib[2]);  // no need to do in sf.
+        double magnitude = sqrt(calibAccel[0] * calibAccel[0] + calibAccel[1] * calibAccel[1] + calibAccel[2] * calibAccel[2]);  // no need to do in sf.
 
         // Print calibrated data (X, Y, Z) and the magnitude // in sf we will not print it , but give it to the sf. 
         Serial.print("Calibrated X: ");
-        Serial.print(calib[0], 5);
+        Serial.print(calibAccel[0], 5);
         Serial.print(", Y: ");
-        Serial.print(calib[1], 5);
+        Serial.print(calibAccel[1], 5);
         Serial.print(", Z: ");
-        Serial.print(calib[2], 5);
+        Serial.print(calibAccel[2], 5);
         Serial.print(" | Magnitude: ");
         Serial.println(magnitude, 5);
     } else {
