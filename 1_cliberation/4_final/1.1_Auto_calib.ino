@@ -79,7 +79,7 @@
 
 
 
-
+//// mix 0_Acc_gyro_code and Auto_calib_mag code ... but also refer the 1_calib/0_sensor_basic/full_code.ino since usme format is there how to use ISM and MMC together using sensor hub , etc...
 
 
 

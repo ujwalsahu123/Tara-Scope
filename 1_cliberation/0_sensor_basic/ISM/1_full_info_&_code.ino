@@ -125,10 +125,11 @@ void loop(){
 //######################################################### library functions ######################################################### 
 
 // main library files to read
-// sfe_ism330dhcx.h (has all the function list -> setting functions , getting data wale functions , output data ka datatype and struct etc)
-// sfe_ism330dhcx.cpp (has all the codes for the functions - ex get_raw_accel(), etc ) (high level code - function is calling the low level function of ism330dhcx_reg.c)
-// ism330dhcx_reg.c (has low level read/write and main code - ex functions that read buffer and lsb values , also convert_Lsb_to_2g() , convert_Lsb_to_250dps() , etc )
-// ism330dhcx_reg.h
+// sfe_ism330dhcx.h => (has all the function() list - joo joo hum call kar sakte hai -> setting functions , getting data wale functions , output data ka datatype and struct etc)
+// sfe_ism330dhcx_defs.h => (has all the Arguments we can pass to the inbuild library functions)
+// sfe_ism330dhcx.cpp => (has all the codes for the functions - ex get_raw_accel(), etc ) (high level code - function is calling the low level function of ism330dhcx_reg.c)
+// st_src/ism330dhcx_reg.c => (has low level read/write and main code - ex functions that read buffer and lsb values , and acctual code of all functions in the sfe_ism330dhcx.cpp code file -> such as the ism convert_Lsb_to_2g() , convert_Lsb_to_250dps() , etc )
+// st_src/ism330dhcx_reg.h
 
 
 
@@ -566,55 +567,84 @@ myISM.setGyroFilterLP1(false); // strictly off
 // example : BDU = ON (safe mode) -> Once new data is ready → it freezes the registers, then Waits until both LSB + MSB are read, and Only then updates to next sample
 
 
+// or  is it like -> // Prevent overwriting of unread data
+// matlab -> it will not update the registers until the last reading is readed. ? and then only it will update the new values.
+// in this case -> if the sensor was x = 90 and we didnt read the value after then and then we move the sensor to x = 120 and read the value then x = 90 wala value read hoga(since it didnt update the unread data) ? 
 
-
-// ######################################################### Inerrupt Pin #########################################################
-
-
-// Interrupt Settings
-		bool setAccelStatustoInt1(bool enable = true);
-		bool setAccelStatustoInt2(bool enable = true);
-		bool setGyroStatustoInt1(bool enable = true);
-		bool setGyroStatustoInt2(bool enable = true);
-		bool setIntNotification(uint8_t val);
-		bool setDataReadyMode(uint8_t val);
-		bool setPinMode(bool activeLow = true);
-
-/Interrupt pin notification settings.
-#define ISM_ALL_INT_PULSED            0x00
-#define ISM_BASE_LATCHED_EMB_PULSED   0x01
-#define ISM_BASE_PULSED_EMB_LATCHED   0x02
-#define ISM_ALL_INT_LATCHED           0x03
-
-#define ISM_SH_ODR_104Hz 0x00
-#define ISM_SH_ODR_52Hz  0x01
-#define ISM_SH_ODR_26Hz  0x02
-#define ISM_SH_ODR_13Hz  0x03
-
-// ######################################################### Sensor Hub #########################################################
-
- code example see 
- libarary functions see
-
-// Sensor Hub Settings
-		bool setHubODR(uint8_t rate);
-		bool setHubSensorRead(uint8_t sensor, sfe_hub_sensor_settings_t* settings);
-		bool setHubSensorWrite(sfe_hub_sensor_settings_t* settings);
-		bool setNumberHubSensors(uint8_t numSensors);
-		bool enableSensorI2C(bool enable);
-		bool readPeripheralSensor(uint8_t* shReg, uint8_t len);
-		bool setHubWriteMode(uint8_t config);
-		bool readMMCMagnetometer(uint8_t* magData, uint8_t len);
-		bool setHubPassThrough(bool enable = true);
-		bool setHubFifoBatching(bool enable = true);
-		bool setHubPullUps(bool enable = true);
-		bool getHubStatus();
-		bool getExternalSensorNack(uint8_t sensor);
-		bool resetSensorHub();
+// Block Data Update (BDU) works like this:
+// The sensor keeps measuring internally all the time (orientation 90 → 120 → 150 etc. keeps updating inside).
+// BDU does NOT stop the sensor from measuring.
+// It only controls when the output registers are allowed to change.
+// What actually happens
+// Each axis value is stored as LSB + MSB.
+// Without BDU ❌
+// → You might read LSB from old sample and MSB from new sample → corrupted value.
+// With BDU ✅
+// → Once you start reading either LSB or MSB, the sensor freezes both until both are read.
+// → After both are read, registers update to the latest available measurement.
+// Important point (your main doubt)
+// ❌ It does NOT mean: “If you didn’t read last time (x=90), next read will still give 90”
+// ✅ Wrong fear
+// The sensor will give the latest completed sample, not an old one.
 
 
 
 
+// // ######################################################### temperature  #########################################################
+
+// Function calls ------------
+// bool checkTempStatus(); -> check if we can get the temp or not.
+// int16_t getTemp(); -> to get the raw temp value from sensor.
+// float convertToCelsius(int16_t data); -> function to convert raw temp to degree Celcius.
+		
+// inner library functions ----------
+// float ism330dhcx_from_lsb_to_celsius(int16_t lsb)
+// {
+// return (((float)lsb / 256.0f) + 25.0f);
+// }
+// float QwDevISM330DHCX::convertToCelsius(int16_t data)
+// {
+// return(ism330dhcx_from_lsb_to_celsius(data));
+// } 
+
+////////   Temp sensor only works when the ISM sensor is ON , other wise the checkTempStatus() gives False. and getTemp() gives 0 value.
+// so to turn ON the ISM sensor -> we need to either turn on the Accel or Gyro . 
+// and to do that -> you have to set the Datarate of anyone of them -> and thus the ISM sensor turns on.
+// (dosent matter the data_rate value , bass you must call the DataRate() function.) 
+myISM.setAccelDataRate(ISM_XL_ODR_104Hz); 
+myISM.setGyroDataRate(ISM_GY_ODR_104Hz);
+// (calling any one also is fine.)
+
+
+// code for getting the Temp ----------------------
+if (myISM.checkTempStatus())
+{
+  int16_t rawTemp = myISM.getTemp(); // get the rawTemp
+  float tempC = myISM.convertToCelsius(rawTemp); // conver to Celsius
+
+  Serial.print("Raw temp: ");
+  Serial.print(rawTemp);
+  Serial.print(" | Temperature: ");
+  Serial.print(tempC, 2);
+  Serial.println(" °C");
+  delay(500);
+}
+
+// very accurate -> +-0.5 deg celcius max differnce from the Local Weather app . so i think pretty accurate Temp.
+
+
+
+// // ######################################################### check status / test #########################################################		
+
+// Status
+		bool checkStatus();
+		bool checkAccelStatus();
+		bool checkGyroStatus();
+		bool checkTempStatus();
+
+// Self Test
+		bool setAccelSelfTest(uint8_t val);
+		bool setGyroSelfTest(uint8_t val);
 
 // // ######################################################### offset seen #########################################################
 
@@ -639,12 +669,15 @@ myISM.setGyroFilterLP1(false); // strictly off
 
 
 // ------------------------------------------------------------------------
-
+// need to always set this in the top or setup() function.
+unsigned int DataRate_HZ = 104; // keep same as sensor_Hz
+unsigned long PERIOD_US= (1000000UL / DataRate_HZ);
 unsigned long lastRead = 0; // correct // assign at the time of defining 
 unsigned long now = 0;
 // lastRead = 0; // wrong - since in global only decalration is allowed not statements are not (reassigning a variable is a statement)
 // now = 0;
 
+// -----------------------------------------------
 void loop()
 {
 	now = micros();
@@ -734,6 +767,206 @@ lastRead = 0; // reset after use
 
 
 
+// ######################################################### Inerrupt Pin #########################################################
+
+// Interrupt pins are hardware “ready signals” from the IMU to the MCU.
+// Instead of:
+// MCU repeatedly asking: “New data? New data?” (polling)
+// You do:
+// IMU says: “Hey! New data is ready NOW.” (interrupt)
+// This is more accurate, lower jitter, and more efficient.
+
+// What do they signal?
+// On ISM330DHCX, interrupts can signal:
+// ✅ Accelerometer data ready
+// ✅ Gyroscope data ready
+// FIFO watermark / overflow
+// Embedded functions (FSM, ML core, etc.)
+// Sensor hub data ready
+
+// Your board has 3 interrupt pins
+// 🔹 INT1 (ISM330DHCX)
+// Output only
+// Can signal:
+// Accel data ready
+// Gyro data ready
+// FIFO events
+// Motion / wake-up / step events
+
+// 🔹 INT2 (ISM330DHCX)
+// Input or output
+// Used for:
+// Data ready (same as INT1)
+// Sensor Hub synchronization
+// FSM / ML core events
+// 👉 INT2 is special because it can be used to sync sensor-hub reads.
+
+// 🔹 MINT (MMC5983MA magnetometer)
+// Interrupt from magnetometer only
+// Signals:
+// Measurement done
+// Data ready
+
+
+// using Interrup pin :-
+// You never read half-updated data
+// You read exactly at ODR
+// Your timing jitter → near zero
+
+// Interrupt notification modes (important)
+// ISM_ALL_INT_PULSED
+// 🔹 Pulsed
+// Short pulse
+// Must catch it in time (fast MCU)
+
+// ISM_ALL_INT_LATCHED
+// 🔹 Latched ✅ (recommended)
+// Pin stays HIGH/LOW until you read status register
+// Much safer
+// 👉 For Arduino-level work: LATCHED
+
+// How interrupts help YOU specifically
+// ✅ Accelerometer + Gyro
+// INT1 or INT2 → data ready
+// Read acc + gyro exactly at 104 Hz
+// Perfect for sensor fusion
+
+// ⚠️ Magnetometer (MMC)
+// Has MINT
+// Fires when measurement is done
+// But measurement must be triggered first
+// This is why MMC is tricky.
+// INT1 and INT2 are output pins from ISM, configurable.
+// MINT is output from MMC, totally separate.
+
+
+// xtra:
+// Sensor Hub + Interrupts (key insight)
+// In Sensor Hub mode:
+// ISM controls MMC
+// INT2 can be used to:
+// Trigger hub reads
+// Sync acc + gyro + mag
+// BUT…
+// ⚠️ MMC needs a trigger bit every read
+// → That’s why SparkFun says “not ideal”
+// Not because it’s impossible
+// But because it’s not free-running
+
+// Pins on your board
+// 🔹 ISM330DHCX
+// INT1 → typically used for Accel/Gyro Data Ready
+// INT2 → can be used for:
+// Data ready
+// FIFO
+// Sensor hub sync
+
+// 🔹 MMC5983MA
+// MINT → magnetometer data ready
+
+
+
+// Interrupt Settings
+bool setAccelStatustoInt1(bool enable = true); // Every time new accel data is produced, INT1 toggles
+bool setAccelStatustoInt2(bool enable = true); // Every time new accel data is produced, INT2 toggles
+bool setGyroStatustoInt1(bool enable = true); // Every time new Gyro data is produced, INT1 toggles
+bool setGyroStatustoInt2(bool enable = true); // Every time new Gyro data is produced, INT2 toggles
+// mostly the INT1 is for ISM , and INT2 is for other sensors using sensor hub. but we can use accel for int1 and gyro for int2
+// but we can also use INT1 for both accel and gyro 
+// so if either one is ready then INT1 toggles. 
+// "If accel + gyro are both enabled on INT1 → INT1 fires for either" . so basically both the acc and gyro gets updates at the same time.. so we can simply just check the interrupt pin of acc or gryo any one of them. and then simply read both acc and gyro updated values , but both accel and gyro must be at same ODR rate
+// Yes 👍 If ACC + GYRO data-ready are both routed to INT1, then INT1 will trigger whenever either new accel or new gyro data is ready.
+// In practice (since both usually run at the same ODR):
+// INT1 fires
+// You read both accel and gyro
+// You get the latest updated values of both
+
+
+bool setIntNotification(uint8_t val); // Controls HOW the interrupt behaves electrically // This decides which events are allowed to trigger INT pins.
+// matlab output kaisa hoga ... just one quick high signal when data is ready or hold karna high signal ...
+// ISM_ALL_INT_PULSED -> Interrupt pin pulses briefly (short spike (easy to miss without seperate ISR function-which checks))
+// ISM_ALL_INT_LATCHED	-> Interrupt stays HIGH/LOW until cleared (stays asserted until data is read (safe))
+// ISM_BASE_LATCHED_EMB_PULSED -> 
+// ISM_BASE_PULSED_EMB_LATCHED -> 
+// 🔹 Pulsed
+// Interrupt pin goes HIGH (or LOW) for a very short pulse
+// Then it automatically returns to inactive
+// MCU must catch the edge (via hardware interrupt)
+// If MCU is busy → you can miss it
+// 👉 Think: “tap on the shoulder”
+// 🔹 Latched
+// Interrupt pin goes HIGH (or LOW) and STAYS there
+// It stays active until you read the status / data registers
+// Impossible to miss
+// 👉 Think: “alarm stays ON until you acknowledge”
+
+// ISM_ALL_INT_PULSED -> All interrupts are pulsed , Base + embedded events = pulses
+// ISM_ALL_INT_LATCHED -> All interrupts are latched , Base + embedded events = latched
+// ISM_BASE_LATCHED_EMB_PULSED -> Base interrupts (data-ready: accel/gyro) → latched , Embedded events (FSM, MLC, step counter) → pulsed
+// ISM_BASE_PULSED_EMB_LATCHED -> Base → pulsed , Embedded → latched
+// 👉 These matter only if you use FSM / MLC / step detection
+
+bool setDataReadyMode(uint8_t val); // this is differnt from Notification // This applies only to DATA-READY signals (accel / gyro).
+// 0 = Latched → interrupt clears only after data read
+// 1 = Pulsed → interrupt auto-clears
+
+bool setPinMode(bool activeLow = true); //Sets electrical polarity of INT pins
+// true -> Interrupt goes LOW when active
+// false -> Interrupt goes HIGH when active // When data is ready → drive the pin HIGH”
+
+
+
+
+// final --------------------------------------------------
+
+// interrupt pin - is not like blockdata. -> so its not like ki data will only be updated after the data is readed. (data will contineously update and interrupt pin ka kam hai baas ki track ki the data is new or not..)
+// 👉 Interrupt pin does NOT hold the sensor data.
+// 👉 It only holds the signal (HIGH/LOW).
+
+// we can use the Interrupt pin with the loop so we read all the data and we dont need to do loop timer .... we simply read the data when the new data is available.
+
+#define INT1_PIN ?
+#define INT2_PIN ?
+
+myISM.setAccelStatustoInt1(true);   // ACC → INT1 // INT1 fires when new accelerometer data is ready
+myISM.setGyroStatustoInt2(true);    // GYRO → INT2 // INT2 fires when new gyroscope data is ready
+myISM.setDataReadyMode(0);   // 1 = pulsed, 0 = latched  
+myISM.setIntNotification(ISM_ALL_INT_LATCHED); // Latched -> Interrupt pin stays HIGH/LOW until the data is read // So we dont miss anydata
+myISM.setPinMode(false); //When data is ready → drive the pin "HIGH” and after data read it gives LOW until the data is updated
+
+
+// use this way to whenever you want to Get the RAW data from the Senosr.
+// check if both acc and gyro interrupt pins are high -> (new data is updated after last read)
+if( (digitalRead(INT1_PIN) == HIGH) && (digitalRead(INT2_PIN) == HIGH) )
+{	
+	// get data
+	if (myISM.getRawGyro(&rawGyroData)&&myISM.getRawAccel(&rawAccelData))
+		{
+			Serial.print("Accelerometer: ");
+			Serial.print("X: ");
+			Serial.print(rawAccelData.xData);
+			Serial.print(" ");
+			Serial.print(rawAccelData.yData);
+			Serial.print("Y: ");
+			Serial.print(" ");
+			Serial.print("Z: ");
+			Serial.print(rawAccelData.zData);
+			Serial.println(" ");
+			Serial.print("Gyroscope: ");
+			Serial.print("X: ");
+			Serial.print(rawGyroData.xData);
+			Serial.print(" ");
+			Serial.print("Y: ");
+			Serial.print(rawGyroData.yData);
+			Serial.print(" ");
+			Serial.print("Z: ");
+			Serial.print(rawGyroData.zData);
+			Serial.println(" ");
+		}
+}
+
+
+
 
 
 
@@ -791,7 +1024,7 @@ myISM.setFifoMode(ISM_BYPASS_MODE); // default is bypass - Sensor always exposes
 
 
 
-// full Proper code for ISM
+// full Proper code for ISM using timer loop . 
 // ----------------------------------------------------------------------------------------------------------
 
 
@@ -843,7 +1076,7 @@ void setup() {
 	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
 	// if you wanna update the range of acc or gyro then - not just you have to change the scaling factor , but again calib (as per that_range_lsb_data * that_range_scaling_factor) and get new offset.
 	
-	// DataRate -> 104Hz is good (fast & low noise)
+	// DataRate -> 104Hz is good (fast & low noise) // can also try 208 or more in SF since it needs frequent values.
 	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
 	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
 	DataRate_HZ = 104; // keep same as sensor_Hz
@@ -928,12 +1161,205 @@ void loop()
 			
 			
 			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// full Proper code for ISM using Interrup pins . 
+// ----------------------------------------------------------------------------------------------------------
+
+
+#include <Wire.h>
+#include "SparkFun_ISM330DHCX.h"
+
+SparkFun_ISM330DHCX myISM;
+sfe_ism_raw_data_t rawAccelData;
+sfe_ism_raw_data_t rawGyroData;
+
+#define INT1_PIN ?
+#define INT2_PIN ?
+
+
+void setup() {
+	Wire.begin();
+    Serial.begin(115200);
+	
+	
+    if (!myISM.begin()) {
+		Serial.println("Could not initialize ISM330DHCX. Check connections.");
+        while (1);
+    }
+	
+    // Reset the device to default settings
+    myISM.deviceReset();
+    while (!myISM.getDeviceReset()) {
+		delay(1);
+    }
+	Serial.println("Reset complete.");
+	Serial.println("Applying settings.");
+	delay(100);
+	
+	
+    // Apply device settings
+    myISM.setDeviceConfig();
+    myISM.setBlockDataUpdate(); 
+	
+	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
+	
+	// Range -> always need to set, even if scaling maunally
+	myISM.setAccelFullScale(ISM_2g); 
+	myISM.setGyroFullScale(ISM_125dps); 
+	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
+	// if you wanna update the range of acc or gyro then - not just you have to change the scaling factor , but again calib (as per that_range_lsb_data * that_range_scaling_factor) and get new offset.
+	
+	// DataRate -> 104Hz is good (fast & low noise) // can also try 208 or more in SF since it needs frequent values.
+	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
+	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
+
+	// Filter ->
+	myISM.setAccelFilterLP2(false); // can keep it ON also, // later, TRY : ON in SensorFusion and see the results. 
+    // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 20, 45 (not 10) // (if you keep the filter then based on the filter -> update the offset as per that)
+	myISM.setGyroFilterLP1(false); // strictly off
+	
+	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
+	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
+	
+	// Interrup Pin - for Accessing DATA Properly.
+	myISM.setAccelStatustoInt1(true);   // ACC → INT1 // INT1 fires when new accelerometer data is ready
+	myISM.setGyroStatustoInt2(true);    // GYRO → INT2 // INT2 fires when new gyroscope data is ready
+	myISM.setDataReadyMode(0);   // 1 = pulsed, 0 = latched  
+	myISM.setIntNotification(ISM_ALL_INT_LATCHED); // Latched -> Interrupt pin stays HIGH/LOW until the data is read // So we dont miss anydata
+	myISM.setPinMode(false); //When data is ready → drive the pin "HIGH” and after data read it gives LOW until the data is updated
+
+	----------------------------- offset , etc seen .....
+
+	
+	delay(100);
+    Serial.println("Settings applied.");
+}
+
+
+
+
+void loop()
+{
+	
+// check if both acc and gyro interrupt pins are high -> (new data is updated after last read)
+if( (digitalRead(INT1_PIN) == HIGH) && (digitalRead(INT2_PIN) == HIGH) )
+{	
+	// get data
+	if (myISM.getRawGyro(&rawGyroData)&&myISM.getRawAccel(&rawAccelData))
+		{
+			Serial.print("Accelerometer: ");
+			Serial.print("X: ");
+			Serial.print(rawAccelData.xData);
+			Serial.print(" ");
+			Serial.print(rawAccelData.yData);
+			Serial.print("Y: ");
+			Serial.print(" ");
+			Serial.print("Z: ");
+			Serial.print(rawAccelData.zData);
+			Serial.println(" ");
+			Serial.print("Gyroscope: ");
+			Serial.print("X: ");
+			Serial.print(rawGyroData.xData);
+			Serial.print(" ");
+			Serial.print("Y: ");
+			Serial.print(rawGyroData.yData);
+			Serial.print(" ");
+			Serial.print("Z: ");
+			Serial.print(rawGyroData.zData);
+			Serial.println(" ");
+		}
+}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ###################################################################################################
 // update these code in all ACC , Gryo , final_calib 
 // (Gothrough each code file, and read every line - ino/py both)
 			
+// which to use loop timer ? or interrup pin seen ?
+
 // update the loop in every ardu.ino file ACC -> all main() loop and every other loop  where we read sensor data.
 // only use the Hz timer loop technique where you are reading sensor data - should i also use it in in sf loop ? , etc.... ask gpt ??????????
 
 
 // In 5_ardu_calib_acc code & 8_Auto_calib_acc code & 6_Auto_calib_gyro -> keeps all the above comments also. dont remove it. verna if you use that codefile (without comment wala) in another imp codefile -- then voo imp comment ka kuch fyda nahi 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

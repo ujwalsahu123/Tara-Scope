@@ -1,8 +1,9 @@
 /////////////////////////////////////////
-// HERE use the -> 1.1_Auto_calib.ino code and comment all the calib  and it should give calib_valeus only as per the hardcoded one. 
+// HERE use the -> 1.1_Auto_calib.ino code and comment all the calib part and it should give calib_valeus only as per the hardcoded one. 
 // so that we use this code in SF 
 // ( so that quickly we can test and debugg without any Auto_calc_offset...part )
 // and keep nice offset for acc,gyro,mag - since we will not auto_calib here.
+// after we figured out SF then we will mix the 1_Auto_calib wala with sf in -> sf_with_auto_calib code file.
 /////////////////////////////////////////
 
 

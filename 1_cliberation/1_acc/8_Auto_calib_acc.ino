@@ -1,72 +1,21 @@
+// INFO:
+// we can do Accel Auto Calculate the offset/bias using data points & local_g (instead of using magento) 
+// so that no need to Run 3 differnt files and use magneto then store offset/bias here and there. 
+// We just simply press a Cmd "L" and then it uses the 2 motors to move the sensor and collect the data at different orientaitons
+// and then send that data to python where it uses the collected data and local_g to calculate the offset/bias and it also stores it in offset.txt file
+// and then send that offset/bias to arduino , so that the arduino gives calibrated values as per the new offset/bias we calculated.
+// put the device in sleeping position before calib (so that sensors can move 3 axis rotation)
+// then stand up the device and do gyro calib , mag calib - and then dont touch the device.
 
- 
-
-
-
-/// update this ........  NOTES as per the code....... (CODE IS DONE)
-
-
-/// also test kar lena ek bar - since have not tested this code yet. (but it should work)
-
-
-
-
-
-// we can do auto_calc the offset / bias using data points that we have -> as per the currect location ka gravity. 
-// same as magneto , but for more precision we use current location ka g and not 1g . 
-// so bar bar location ka g nikalna and manually give to magnetor and offset copy paste say acccha
-// we can use the location api and noaa api for height . and use the g_calculator api and give it locaiton and height to get our G . 
-
-// i think i need to collect new data also yaa puranay wale say kam chal jaygaa ? (since old data was collected where g was differnt...)
-// also check Magnetor offset/ bias on my manually collected data as per -> 1g vs 0.97...(current location ka g)  both kay offset compare - kitna fark hai.
-// there is minute fark but local g is better... for sure. i saw the internet.
-// and we can collect the data also (not a big deal) - sleeping position may rakhna hoga the device (since we get orientations) 
-// and then when standed up we do gyro calib and mag calib. and then no touching the device.
-
-// see -> acc_collect_data, get local g, acc_calculate_offset <- is better to do (Not at every startup but if the device is in at new location than previously acc_calib location ) 
-// too karna too accha hai , but need to think ki improvement hoga issay ya nahi (need to check this) since noise is way bigger than these small accuracy jugad we do. ********************
+// NOTES:
+// -> at differnt gravity /place its better to calcualte new data and then use that data with the local_g of that place.
+// (No need to do Accel Calib at every startup but if the device is in at new location than previously acc_calib location ) 
+// Also later think on this -> Calib karna too accha hai , but need to think ki improvement hoga issay ya nahi (need to check this) since noise is way bigger than these small accuracy jugad we do -(calib as per local g.)
+// Also later think -> if the main thing we are doing is calib as per the local_g then can we use the previous data collected and just calcuate the offset/bias as per that previously_collected data and the current location ka local_g.
+// we are not doing calc offset/bias here since its very heavy computation and it needs numpy library.
 
 
-// Think karna hai yaa nahi ???? (does this increase nay accuracy ?  if we calc offset/bias as per current locaiton ka G and not 1g.)
-
-// so think ki karha hai ya nahi, 
-
-// if karna hai => then write 7_calc_acc.ino , then think ki -> old data with new g value or get new data with new g ?? (better dosent matter - how much accurary imporves that matters  - if very little bit then no need.)
-// so based on thinking write collect_data or not (same code as motor_code_acc - but sleeping may hoga and fully automated moving and reading) - 
-// get the g from api - using python code (the ard will request the python and python will fetch api Not NOAA wala -its bad, and get the local g) - and if not able to get the api - then it asks in terminal to us . and after given it passes it to arduino. 
-// and ard uses the data and local in ard_calc() function to calculate the offset (not bias since factor bias is fine and its not dependent on local g) . then store the offset in a var  (in real device store the readins and offset, etc constanst in the Ram data - since if device on-off hua then we dont want all the data to be deleted. - can think more on what gets stored and what not and architecture, etc..)
-// then run the Calib_acc fun which does raw->scale->calib
-
-// after making this function update the final_Auto_calib.ino and 3_motor_code and py which sends cmd to 3_motor_code
-
-
-// write function -> calc_acc() which collectes data pionts at sleep position - full automatically. 
-// # and then scales those values and get the local_g from user input (later python api)
-// #  and then does using the scaled_data_points collected and local_g -> finds the offset and bias and stores it in a variable.
-
-
-
-// use api for getting local_g . and for that we need height which we can get from api or (barometer later) and we also want latitude logitude - which we will get from api
-
-// So in this code only put calc_acc() wala code . and using python we will get local_g and then give it to the calc_acc() function which will - 1st give instructions that sleeping may rakho at rest.... and then it will collect data and use that data with local_g to calculte the offset/bias using the Algo.... and then store it and then use that when calib ......  
-////// process ->  here write the calc_acc() function which takes local_g from python - collects data & scales (motor-automated) - runs algo to find the offset/bias and stores it - in main fucntion raw->scale->calib->print
-// and then use this code and update the final_calib/Auto_calib.ino   , and then that Auto_calib will be used in 3_full_motor_code -> and that 3_full_motor_code will be used by a py file from which we will send command -> "calib"  and also send local_g , magnetig_field (using api) to arudino -> so that it can caclulate and store it and use it for raw->scale->calib->sf->RPY
-
-// after writing this code file -> update the final_calib/ACC_GYRO_calib.ino file and all other files of that folder.
-
-
-
-// cmd "l" press hoga then only it calibs accel. and updates the hardcoded values and then prints the new values
-// hardcoded may kya rakhna hai ??? konsa offset ??
-
-
-
-
-
-
-
-
-// process : 
+// PROCESS : 
 // apply caliberation on live data - and see the xyz and Magnitude . 
 // by seeing the magnitude you can judge if the offset are good or bad as per (magnitude close to 1).
 // so there is hardcoded offset prewritten and it also ask for the latest offsets and bias from python form offset.txt
@@ -77,10 +26,10 @@
 // and arduino updates the offset and bias and give calib_values as per that new only.
 
 
+// # For Accel dont do Raw->calib->Scale , do Raw->scale-> calib. (since when you do Raw-> calib-> scale then precision is lost since the lsb values are super big, so offset are like 0.000061)
 
 
 
-// # dont do Raw->calib->Scale , do Raw->scale-> calib. (since when you do Raw-> calib-> scale then precision is lost since the lsb values are super big, so offset are like 0.000061)
 
 
 
@@ -299,7 +248,7 @@ void setup()
 	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
 	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
 	DataRate_HZ = 104; // keep same as sensor_Hz
-    PERIOD_US = (1000000UL / DataRate_HZ);
+  PERIOD_US = (1000000UL / DataRate_HZ);
 
 	// Filter ->
 	myISM.setAccelFilterLP2(false); 

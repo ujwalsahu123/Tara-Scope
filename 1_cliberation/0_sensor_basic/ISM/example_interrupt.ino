@@ -2,10 +2,7 @@
 
 
 
-// we can also ON/OFF the reading when we want using - Interrupt pin (sensor will be ON, but we will read data only when interrupt pin is HIGH)  ----------------------------------
-// byte interrupt_pin = (any digital number); // top may write this
-// pinMode(interrupt_pin, INPUT); // setup() may write this
-// if( digitalRead(interrupt_pin) == HIGH ) // code may write this. 
+
 
 
 
