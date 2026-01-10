@@ -4,6 +4,7 @@
 *.exe  
 
 # Ignore specific directories
+geoids/
 
 # Ignore .txt files in analysis big data folders
 1_cliberation/1_acc/Analysis_big_data/*.txt

@@ -310,7 +310,7 @@ def send_offsets_to_arduino():
     time.sleep(0.05)   # 50 milliseconds dealy to get sync , and then clear the buffer. other wise even after clearing the buffer some values (accel , gyro contineously printed values) slip in the buffer.
     flush_serial()  # need to clear the buffer -> other wise the python reads all that old accel , gyro contineously printed values , which are in buffer.
 
-    # wait for Arduino ready
+    # wait for Arduino ready # handshake
     while True:
         if ser.in_waiting:
             msg = ser.readline().decode().strip()
@@ -329,7 +329,7 @@ def send_offsets_to_arduino():
 
     ser.write(b"END\n") # for safety
 
-# wait for Arduino to tell if it actually updated the values
+# wait for Arduino to tell if it actually updated the values # handshake
     while True:
         if ser.in_waiting:
             msg = ser.readline().decode().strip()

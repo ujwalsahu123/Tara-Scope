@@ -603,26 +603,26 @@ for (int i = 0; i < 3; i++)
   String endLine = Serial.readStringUntil('\n');   // reads "END" // for safety
   endLine.trim();
  
+  // I tested , it actally updates the offsets as per the offset.txt values
+  // Serial.println(gyro_bias[0],6);
+  // Serial.println(gyro_bias[1],6);
+  // Serial.println(gyro_bias[2],6);
+  // Serial.println(b_acc[0],6 );
+  // Serial.println(b_acc[1],6 );
+  // Serial.println(b_acc[2],6 );
+  // Serial.println(A_acc[0][0],6 );
+  // Serial.println(A_acc[0][1],6 );
+  // Serial.println(A_acc[0][2],6 );
+  // Serial.println(A_acc[1][0],6 );
+  // Serial.println(A_acc[1][1],6 );
+  // Serial.println(A_acc[1][2],6 );
+  // Serial.println(A_acc[2][0],6 );
+  // Serial.println(A_acc[2][1],6 );
+  // Serial.println(A_acc[2][2],6 );
+  
 
   if(endLine == "END")
   {
-     
-  Serial.println(gyro_bias[0],6);
-  Serial.println(gyro_bias[1],6);
-  Serial.println(gyro_bias[2],6);
-  Serial.println(b_acc[0],6 );
-  Serial.println(b_acc[1],6 );
-  Serial.println(b_acc[2],6 );
-  Serial.println(A_acc[0][0],6 );
-  Serial.println(A_acc[0][1],6 );
-  Serial.println(A_acc[0][2],6 );
-  Serial.println(A_acc[1][0],6 );
-  Serial.println(A_acc[1][1],6 );
-  Serial.println(A_acc[1][2],6 );
-  Serial.println(A_acc[2][0],6 );
-  Serial.println(A_acc[2][1],6 );
-  Serial.println(A_acc[2][2],6 );
-  
     Serial.println("Updated all offset/bias values");
     use_file_offsets = true; // for degugging, etc 
   }
