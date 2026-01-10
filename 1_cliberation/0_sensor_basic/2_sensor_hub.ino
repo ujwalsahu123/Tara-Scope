@@ -4,6 +4,8 @@
 
 // last -> int2 pin is used for sensor hub data sync ... so know more about it
 
+// final write -> should i use sensor hub or not ...
+
 // ######################################################### Sensor Hub #########################################################
 // The sensor hub lets the ISM330DHCX act as an I²C master and automatically read external sensors without the MCU talkin
 // So insted of multiple I2C devices connected directly to MCU -> they are connected to the ISM and then ISM reads their data and stores it in registers 

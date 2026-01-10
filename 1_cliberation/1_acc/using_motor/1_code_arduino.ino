@@ -9,13 +9,6 @@
 
 
 
-/////////////////// update this code ka setup() as per 1_basic_ino
-
-
-
-
-
-
 
 
 // ###################################################### ARD_CODE_1 ######################################################
@@ -25,14 +18,17 @@
 #include <CheapStepper.h>
 
 SparkFun_ISM330DHCX myISM;
-CheapStepper motorAlt(4, 5, 6, 7);
-
 sfe_ism_raw_data_t rawAccel;
 
-unsigned int DataRate_HZ;
-unsigned long PERIOD_US;               
-unsigned long lastRead = 0;
+CheapStepper motorAlt(4, 5, 6, 7);
+
+// IMP - so that loop run as per the data rate of sensor and not try to run as fast as possible 
+unsigned int DataRate_HZ;	
+unsigned long PERIOD_US;          
+// time tracker for loops -> mainLoop(), while() , for()     
+unsigned long lastRead = 0; 
 unsigned long now = 0;
+
 
 // #######################   CONFIG   ####################### 
 #define AVG_MEAS  25 // take Avg of N readings to get 1 stable reading /per orientation.
@@ -43,17 +39,17 @@ const int STEPS_to_move_per_orientation = (STEPS_PER_REV / N_orientations) ;
 // So if 4096/1_orientation => so 4096_steps_per_orientation to complete 1 full rotation. if 4096/2_orientaitons => so 2048_step)per_orientation and it will take 2 orientatins to complete 1 full rotation.      
 // #############################################################
 
-int count = 0;
+int count = 0; // iterator for Average readings
 long ax = 0, ay = 0, az = 0; // Make Avg calculation 0 - before storing new avg calculations.
 
 // function to calculte the avg readings and print it.
 void Read_Accel_data()
 {
-    ax = 0; ay = 0; az = 0; // Make Avg calculation 0 - before storing new avg calculations.
-    // take 25 readings ka AVG - for single orientation.
+  // take 25 readings ka AVG - for single orientation.
     now = 0;
     lastRead = 0;
-    count = 0;
+    count = 0; // make iterator 0 before starting.
+    ax = 0; ay = 0; az = 0; // Make Avg calculation 0 - before storing new avg calculations.
     while (count < AVG_MEAS)  // dont worry it will take N readings as per AVG_MEAS at 104/particual hz.
     {
         now = micros();
@@ -109,20 +105,20 @@ void setup()
 	
 	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
 
-    // Range -> always need to set, even if scaling maunally
+  // Range -> always need to set, even if scaling maunally
 	myISM.setAccelFullScale(ISM_2g); 
-	myISM.setGyroFullScale(ISM_125dps); 
+	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
+	// if you wanna update the range of acc or gyro then - not just you have to change the scaling factor , but again calib (as per that_range_lsb_data * that_range_scaling_factor) and get new offset.
 
-	// DataRate -> 
+
+	// DataRate -> 104Hz is good (fast & low noise) // can also try 208 or more in SF since it needs frequent values.
 	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
-	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
 	DataRate_HZ = 104; // keep same as sensor_Hz
-    PERIOD_US = (1000000UL / DataRate_HZ);
+  PERIOD_US = (1000000UL / DataRate_HZ); // using this we Control the iteration time.
 
 	// Filter ->
-	myISM.setAccelFilterLP2(false); 
-  // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45); // can keep 20, 45. 
-	myISM.setGyroFilterLP1(false); // strictly off
+	myISM.setAccelFilterLP2(false); // can keep it ON also, // later, TRY : ON in SensorFusion and see the results. 
+    // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 20, 45 (not 10) // (if you keep the filter then based on the filter -> update the hardcoded offset/bias as per that)
 	
 	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
 	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
@@ -195,15 +191,16 @@ void loop() {
 #include <CheapStepper.h>
 
 SparkFun_ISM330DHCX myISM;
+sfe_ism_raw_data_t rawAccel;
+
 CheapStepper motorAlt(4, 5, 6, 7);
 CheapStepper motorAz(8, 9, 10, 11);
 
-
-sfe_ism_raw_data_t rawAccel;
-
-unsigned int DataRate_HZ;
-unsigned long PERIOD_US;               
-unsigned long lastRead = 0;
+// IMP - so that loop run as per the data rate of sensor and not try to run as fast as possible 
+unsigned int DataRate_HZ;	
+unsigned long PERIOD_US;          
+// time tracker for loops -> mainLoop(), while() , for()     
+unsigned long lastRead = 0; 
 unsigned long now = 0;
 
 // #######################   CONFIG   ####################### 
@@ -215,17 +212,17 @@ const int STEPS_to_move_per_orientation = (STEPS_PER_REV / N_orientations) ;
 // So if 4096/1_orientation => so 4096_steps_per_orientation to complete 1 full rotation. if 4096/2_orientaitons => so 2048_step)per_orientation and it will take 2 orientatins to complete 1 full rotation.      
 // #############################################################
 
-int count = 0;
+int count = 0; // iterator for Average readings
 long ax = 0, ay = 0, az = 0; // Make Avg calculation 0 - before storing new avg calculations.
 
 // function to calculte the avg readings and print it.
 void Read_Accel_data()
 {
-    ax = 0; ay = 0; az = 0; // Make Avg calculation 0 - before storing new avg calculations.
     // take 25 readings ka AVG - for single orientation.
     now = 0;
     lastRead = 0;
-    count = 0;
+    count = 0; // make iterator 0 before starting
+    ax = 0; ay = 0; az = 0; // Make Avg calculation 0 - before storing new avg calculations.
     while (count < AVG_MEAS)  // take Multiple readings ka AVG - for single orientation - at particular Hz.
     {
         now = micros();
@@ -281,25 +278,27 @@ void setup()
 	
 	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
 
+	
+	// DataRate -> 104Hz is good (fast & low noise) // can also try 208 or more in SF since it needs frequent values.
+	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
+	DataRate_HZ = 104; // keep same as sensor_Hz
+    PERIOD_US = (1000000UL / DataRate_HZ); // using this we Control the iteration time.
+
     // Range -> always need to set, even if scaling maunally
 	myISM.setAccelFullScale(ISM_2g); 
-	myISM.setGyroFullScale(ISM_125dps); 
-
-	// DataRate -> 
-	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
-	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
-	DataRate_HZ = 104; // keep same as sensor_Hz
-    PERIOD_US = (1000000UL / DataRate_HZ);
-
+	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
+	// if you wanna update the range of acc or gyro then - not just you have to change the scaling factor , but again calib (as per that_range_lsb_data * that_range_scaling_factor) and get new offset.
+	
+  
 	// Filter ->
-	myISM.setAccelFilterLP2(false); 
-  // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45); // can keep 20, 45. 
+	myISM.setAccelFilterLP2(false); // can keep it ON also, // later, TRY : ON in SensorFusion and see the results. 
+    // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 20, 45 (not 10) // (if you keep the filter then based on the filter -> update the hardcoded offset/bias as per that)
 	myISM.setGyroFilterLP1(false); // strictly off
 	
-	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
+	// fifo config (not much to do here, can try stream mode in SF, see ISM/1_full_info.ino ka final setting section for more info)
 	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
-	
-    
+
+  // set motor RPM (10 is good)  
   motorAlt.setTotalSteps(STEPS_PER_REV);
   motorAlt.setRpm(10); // 6 to 24
   motorAz.setTotalSteps(STEPS_PER_REV);

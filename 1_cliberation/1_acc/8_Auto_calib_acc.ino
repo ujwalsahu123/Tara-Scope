@@ -38,21 +38,23 @@
 #include <CheapStepper.h>
 
 SparkFun_ISM330DHCX myISM;
+sfe_ism_raw_data_t rawAccel;
+
 CheapStepper motorAlt(4, 5, 6, 7);
 CheapStepper motorAz(8, 9, 10, 11);
 
-sfe_ism_raw_data_t rawAccel;
-
-unsigned int DataRate_HZ;
-unsigned long PERIOD_US;               
-unsigned long lastRead = 0;
+// IMP - so that loop run as per the data rate of sensor and not try to run as fast as possible 
+unsigned int DataRate_HZ;	
+unsigned long PERIOD_US;          
+// time tracker for loops -> mainLoop(), while() , for()     
+unsigned long lastRead = 0; 
 unsigned long now = 0;
+
 
 // #######################   CONFIG   ####################### 
 #define ACC_LSB_TO_G 0.00006103515625f   // 2g range
 #define AVG_MEAS  25 // take Avg of N readings to get 1 stable reading /per orientation.
 
-#define AVG_MEAS  25 // take Avg of N readings to get 1 stable reading /per orientation.
 const int STEPS_PER_REV = 4096;
 const int N_orientations = 64 ;
 //SET THIS //(value must be -> 2^N). [VALUES -> (1 = 360Deg) (2 = 180Deg) (4 = 90Deg) (8 = 45Deg) (16 = 22.5Deg) (32 = 11.25Deg) (64 = 5.625Deg) (128 = 2.8125Deg) (256 = 1.4Deg)]
@@ -61,7 +63,7 @@ const int STEPS_to_move_per_orientation = (STEPS_PER_REV / N_orientations) ;
 
 // Hardcoded offset and bias - (g_2g_Nofilter_0.97859) 
 // change it as per filter you use.
-// 1 time Calib when in new Location. 
+// 1 time Calib when in new Location.
 double A_acc[3][3] = 
 {{0.97522389, 0.00009342, -0.00058922},
  {0.00009342, 0.98066595, 0.00053047},
@@ -69,26 +71,24 @@ double A_acc[3][3] =
 double b_acc[3] = { 0.00500114, -0.01523379, 0.01161619}; 
 // ##########################################################
 
-double rawX ;
-double rawY ;
-double rawZ ;
+
+double rawAcc[3] =  {0.0, 0.0, 0.0};
 double calibAccel[3] = {0.0, 0.0, 0.0};
 
 // --------------------------------------------------
 // CALCULATE ACCEL BIAS USING MOTOR
 // --------------------------------------------------
 
-int count = 0;
-long ax = 0, ay = 0, az = 0; // Make Avg calculation 0 - before storing new avg calculations.
+int count = 0; // iterator for Average readings
+double ax = 0, ay = 0, az = 0; // for storing Average readings
 
 // function to calculte the avg readings and print it.
 void Read_Accel_data()
 {
-    ax = 0; ay = 0; az = 0; // Make Avg calculation 0 - before storing new avg calculations.
-    now = 0;
-    lastRead = 0;
-    count = 0;
     // take 25 readings ka AVG - for single orientation.
+    lastRead = 0;
+    count = 0; // make iterator 0 before staring.
+    ax = 0; ay = 0; az = 0; // Make Avg calculation 0 - before storing new avg calculations.
     while (count < AVG_MEAS)  // take Multiple readings ka AVG - for single orientation - at particular Hz.
     {
         now = micros();
@@ -104,6 +104,9 @@ void Read_Accel_data()
             }
         }
     }
+    
+    lastRead = 0;
+
 
     // find AVG
     ax /= AVG_MEAS;
@@ -111,11 +114,11 @@ void Read_Accel_data()
     az /= AVG_MEAS;
 
     // Send AVG RAW LSB ONLY , and in python it will scale
-    Serial.print(ax);
+    Serial.print(ax, 6);
     Serial.print(",");
-    Serial.print(ay);
+    Serial.print(ay, 6);
     Serial.print(",");
-    Serial.println(az);
+    Serial.println(az, 6);
 
     // cannot do calculation of ACC offset and bias over here .
     // so we simply print the raw values and python collects these datapoint and scales it then calculate the offset and bias and stores it in offset.txt
@@ -240,25 +243,27 @@ void setup()
 	
 	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
 
-    // Range -> always need to set, even if scaling maunally
-	myISM.setAccelFullScale(ISM_2g); 
-	myISM.setGyroFullScale(ISM_125dps); 
-
-	// DataRate -> 
+	// DataRate -> 104Hz is good (fast & low noise) // can also try 208 or more in SF since it needs frequent values.
 	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
-	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
 	DataRate_HZ = 104; // keep same as sensor_Hz
-  PERIOD_US = (1000000UL / DataRate_HZ);
+    PERIOD_US = (1000000UL / DataRate_HZ); // using this we Control the iteration time.
+
+
+	// Range -> always need to set, even if scaling maunally
+	myISM.setAccelFullScale(ISM_2g); 
+	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
+	// if you wanna update the range of acc or gyro then - not just you have to change the scaling factor , but again calib (as per that_range_lsb_data * that_range_scaling_factor) and get new offset.
+	
 
 	// Filter ->
-	myISM.setAccelFilterLP2(false); 
-  // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45); // can keep 20, 45. 
-	myISM.setGyroFilterLP1(false); // strictly off
+	myISM.setAccelFilterLP2(false); // can keep it ON also, // later, TRY : ON in SensorFusion and see the results. 
+    // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 20, 45 (not 10) // (if you keep the filter then based on the filter -> update the hardcoded offset/bias as per that)
 	
-	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
+
+	// fifo config (not much to do here, can try stream mode in SF, see ISM/1_full_info.ino ka final setting section for more info)
 	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
 	
-    
+  // Set motor RPM (10 is good)
   motorAlt.setTotalSteps(STEPS_PER_REV);
   motorAlt.setRpm(10); // 6 to 24
   motorAz.setTotalSteps(STEPS_PER_REV);
@@ -275,7 +280,7 @@ void setup()
 
 
 
-  Serial.println("Using hardcoded gyro bias.");
+  Serial.println("Using hardcoded Accel bias.");
   Serial.println("Send 'l' over Serial to recalibrate Accel.");
   delay(500);
 }
@@ -320,15 +325,15 @@ void loop()
 
         // -------- LSB -> SCALE TO g  --------
         // (we are not doing 0.061 since that's mg not g. and the sf wants g . dont do 0.000061, since that has binary representation noise)
-        rawX = (rawAccel.xData) * ACC_LSB_TO_G ;
-        rawY = (rawAccel.yData) * ACC_LSB_TO_G;
-        rawZ = (rawAccel.zData) * ACC_LSB_TO_G;
+        rawAcc[0] = (rawAccel.xData) * ACC_LSB_TO_G ;
+        rawAcc[1] = (rawAccel.yData) * ACC_LSB_TO_G;
+        rawAcc[2] = (rawAccel.zData) * ACC_LSB_TO_G;
 
         // -------- SCALED -> CALIB --------
         // -------- Raw_g -> CALIB using offset/bias_g -> Calib_g  --------
-        calibAccel[0] = A_acc[0][0] * (rawX - b_acc[0]) + A_acc[0][1] * (rawY - b_acc[1]) + A_acc[0][2] * (rawZ - b_acc[2]);
-        calibAccel[1] = A_acc[1][0] * (rawX - b_acc[0]) + A_acc[1][1] * (rawY - b_acc[1]) + A_acc[1][2] * (rawZ - b_acc[2]);
-        calibAccel[2] = A_acc[2][0] * (rawX - b_acc[0]) + A_acc[2][1] * (rawY - b_acc[1]) + A_acc[2][2] * (rawZ - b_acc[2]);
+        calibAccel[0] = A_acc[0][0] * (rawAcc[0] - b_acc[0]) + A_acc[0][1] * (rawAcc[1] - b_acc[1]) + A_acc[0][2] * (rawAcc[2] - b_acc[2]);
+        calibAccel[1] = A_acc[1][0] * (rawAcc[0] - b_acc[0]) + A_acc[1][1] * (rawAcc[1] - b_acc[1]) + A_acc[1][2] * (rawAcc[2] - b_acc[2]);
+        calibAccel[2] = A_acc[2][0] * (rawAcc[0] - b_acc[0]) + A_acc[2][1] * (rawAcc[1] - b_acc[1]) + A_acc[2][2] * (rawAcc[2] - b_acc[2]);
 
         // ------- Calculate magnitude of the calibrated vector
         // at static position the magnitude should be same as g value

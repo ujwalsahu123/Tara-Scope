@@ -26,7 +26,7 @@
 
 // --------------
 // at rest the values should be 0 for all.
-// 1000 samples read (dosent many how many hz you keep)
+// 1000 samples read (dosent matter how many hz you keep)
 // keep the sensor STILL at calib time.
 
 // ------Result--------
@@ -61,11 +61,8 @@
 // bz = 63.93   (+1.07)
 
 
-
-
-
-
-/////////////////// update the code ka setup() as per 1_basic.ino
+// so do calib 30 sec after the startup , just calib for 1000 values not more. , do calib every 10 min...(later figure out time interval)
+// use code_1 its better.
 
 
 
@@ -81,9 +78,12 @@
 SparkFun_ISM330DHCX myISM;
 sfe_ism_raw_data_t rawGyro;
 
-unsigned int DataRate_HZ;
-unsigned long PERIOD_US;               
-unsigned long lastRead = 0;
+
+// IMP - so that loop run as per the data rate of sensor and not try to run as fast as possible 
+unsigned int DataRate_HZ;	
+unsigned long PERIOD_US;          
+// time tracker for loops -> mainLoop(), while() , for()     
+unsigned long lastRead = 0; 
 unsigned long now = 0;
 
 
@@ -93,18 +93,18 @@ unsigned long now = 0;
 double gyro_bias[3] = { 44.295409, -169.449102, 72.213573}; // // Hardcode Gyro bias_lsb, not accurate
 // ##########################################################
 
-double gx ;
-double gy ;
-double gz ;
+double calibGyro[3] = {0.0,0.0,0.0} ;
+long gX = 0, gY = 0, gZ = 0;
+long count = 0;
 
 // =======================================================
 // CALCULATE GYRO BIAS 
 // =======================================================
 void calc_gyro_bias()
 {
-  long sumX = 0, sumY = 0, sumZ = 0;
-  long count = 0;
-  
+  // calculate the bias - by readings 1000 values and doing avg of that.
+  gX = 0; gY = 0; gZ = 0;
+  count = 0;
   lastRead = 0;
 
   Serial.println("Keep gyro STILL for calibration ......");
@@ -122,22 +122,22 @@ void calc_gyro_bias()
 
       if (myISM.getRawGyro(&rawGyro))
       {
-        sumX += rawGyro.xData;
-        sumY += rawGyro.yData;
-        sumZ += rawGyro.zData;
+        gX += rawGyro.xData;
+        gY += rawGyro.yData;
+        gZ += rawGyro.zData;
         count++;
       }
     }
   }
 
-  // retset for further use in the codefile. 
+  // retset after use.
   lastRead = 0;
 
 
   // calculated the bias(lsb)
-  gyro_bias[0] = (float)sumX / count;
-  gyro_bias[1] = (float)sumY / count;
-  gyro_bias[2] = (float)sumZ / count;
+  gyro_bias[0] = (float)gX / count;
+  gyro_bias[1] = (float)gY / count;
+  gyro_bias[2] = (float)gZ / count;
 
 
   ///// NOT HERE -> do in final_calib
@@ -183,21 +183,17 @@ void setup() {
     myISM.setBlockDataUpdate(); 
 	
 	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
+  
+    // DataRate -> 
+    myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
+    DataRate_HZ = 104; // keep same as sensor_Hz
+    PERIOD_US = (1000000UL / DataRate_HZ);
 	
 	// Range -> always need to set, even if scaling maunally
-	myISM.setAccelFullScale(ISM_2g); 
 	myISM.setGyroFullScale(ISM_125dps); 
 
-	// DataRate -> 
-	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
-	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
-	DataRate_HZ = 104; // keep same as sensor_Hz
-    PERIOD_US = (1000000UL / DataRate_HZ);
-
 	// Filter ->
-	myISM.setAccelFilterLP2(false); 
-  // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45); // can keep 20, 45. 
-	myISM.setGyroFilterLP1(false); // strictly off
+myISM.setGyroFilterLP1(false); // strictly off
 	
 	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
 	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
@@ -255,20 +251,20 @@ void loop()
 
         // -------- Raw_LSB -> CALIB using bias_Lsb -> Calib_Lsb --------
         // (Calib_Lsb = Raw_LSB - Bias_Lsb)
-        gx = rawGyro.xData - gyro_bias[0];
-        gy = rawGyro.yData - gyro_bias[1];
-        gz = rawGyro.zData - gyro_bias[2];
+        calibGyro[0] = rawGyro.xData - gyro_bias[0];
+        calibGyro[1] = rawGyro.yData - gyro_bias[1];
+        calibGyro[2] = rawGyro.zData - gyro_bias[2];
 
         // -------- Calib_Lsb -> Scale to -> Calib_Dps --------
-        gx *= GYRO_Scale_DPS;
-        gy *= GYRO_Scale_DPS;
-        gz *= GYRO_Scale_DPS;
+        calibGyro[0] *= GYRO_Scale_DPS;
+        calibGyro[1] *= GYRO_Scale_DPS;
+        calibGyro[2] *= GYRO_Scale_DPS;
 
 
         ///// in sf - instead of prining we give it to sf. 
-        Serial.print(gx, 6); Serial.print(", ");
-        Serial.print(gy, 6); Serial.print(", ");
-        Serial.println(gz, 6);
+        Serial.print(calibGyro[0], 6); Serial.print(", ");
+        Serial.print(calibGyro[1], 6); Serial.print(", ");
+        Serial.println(calibGyro[2], 6);
     }
   }
 }
@@ -329,9 +325,12 @@ void loop()
 SparkFun_ISM330DHCX myISM;
 sfe_ism_raw_data_t rawGyro;
 
-unsigned int DataRate_HZ;
-unsigned long PERIOD_US;
-unsigned long lastRead = 0;
+
+// IMP - so that loop run as per the data rate of sensor and not try to run as fast as possible 
+unsigned int DataRate_HZ;	
+unsigned long PERIOD_US;          
+// time tracker for loops -> mainLoop(), while() , for()     
+unsigned long lastRead = 0; 
 unsigned long now = 0;
 
 
@@ -341,18 +340,19 @@ unsigned long now = 0;
 double gyro_bias[3] = {0.193792 , -0.741340, 0.315934 };  // Hardcode Gyro bias_dps, not accurate
 // ##########################################################
 
-double gx ;
-double gy ;
-double gz ;
+double calibGyro[3] = {0.0,0.0,0.0} ;
+long gX = 0, gY = 0, gZ = 0;
+long count = 0;
 
 // =======================================================
 // CALCULATE GYRO BIAS 
 // =======================================================
 void calc_gyro_bias()
 {
-  long sumX = 0, sumY = 0, sumZ = 0;  
-  int count = 0;
-  
+  // calculate the bias - by readings 1000 values and doing avg of that.
+
+  gX = 0; gY = 0; gZ = 0;
+  count = 0;
   lastRead = 0;
 
   Serial.println("Keep gyro STILL for calibration ......");
@@ -370,23 +370,23 @@ void calc_gyro_bias()
 
       if (myISM.getRawGyro(&rawGyro))
       {
-        sumX += rawGyro.xData ; 
-        sumY += rawGyro.yData ;
-        sumZ += rawGyro.zData ;
+        gX += rawGyro.xData ; 
+        gY += rawGyro.yData ;
+        gZ += rawGyro.zData ;
         count++;
       }
     }
   }
 
-  // retset for further use in the codefile. 
+  // retset after use
   lastRead = 0;
   
   
   // calculated the bias_Lsb 
   // then scale it to get bias_dps.
-  gyro_bias[0] = ((float)sumX / count) * GYRO_Scale_DPS;
-  gyro_bias[1] = ((float)sumY / count) * GYRO_Scale_DPS;
-  gyro_bias[2] = ((float)sumZ / count) * GYRO_Scale_DPS;
+  gyro_bias[0] = ((float)gX / count) * GYRO_Scale_DPS;
+  gyro_bias[1] = ((float)gY / count) * GYRO_Scale_DPS;
+  gyro_bias[2] = ((float)gZ / count) * GYRO_Scale_DPS;
 
 
   ///// NOT HERE -> do in final_calib
@@ -432,21 +432,17 @@ void setup() {
     myISM.setBlockDataUpdate(); 
 	
 	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
+  
+    // DataRate -> 
+    myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
+    DataRate_HZ = 104; // keep same as sensor_Hz
+      PERIOD_US = (1000000UL / DataRate_HZ);
 	
 	// Range -> always need to set, even if scaling maunally
-	myISM.setAccelFullScale(ISM_2g); 
 	myISM.setGyroFullScale(ISM_125dps); 
 
-	// DataRate -> 
-	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
-	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
-	DataRate_HZ = 104; // keep same as sensor_Hz
-    PERIOD_US = (1000000UL / DataRate_HZ);
-
 	// Filter ->
-	myISM.setAccelFilterLP2(false); 
-  // myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_45); // can keep 20, 45. 
-	myISM.setGyroFilterLP1(false); // strictly off
+  myISM.setGyroFilterLP1(false); // strictly off
 	
 	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
 	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
@@ -503,21 +499,21 @@ void loop()
       // first scale then calib with scaled_offset/bias.
 
         // -------- Raw_LSB -> SCALE TO -> Raw_dps  --------
-        gx = (float)rawGyro.xData * GYRO_Scale_DPS;
-        gy = (float)rawGyro.yData * GYRO_Scale_DPS;
-        gz = (float)rawGyro.zData * GYRO_Scale_DPS;
+        calibGyro[0] = (float)rawGyro.xData * GYRO_Scale_DPS;
+        calibGyro[1] = (float)rawGyro.yData * GYRO_Scale_DPS;
+        calibGyro[2] = (float)rawGyro.zData * GYRO_Scale_DPS;
         
         // -------- Raw_dps -> CALIB using bias_dps -> Calib_dps  --------
         // ( Calib_Dps = Raw_Dps - bias_Dps)
-        gx -= gyro_bias[0];
-        gy -= gyro_bias[1];
-        gz -= gyro_bias[2];
+        calibGyro[0] -= gyro_bias[0];
+        calibGyro[1] -= gyro_bias[1];
+        calibGyro[2] -= gyro_bias[2];
       
 
         ///// in sf - instead of prining we give it to sf. 
-        Serial.print(gx, 6); Serial.print(", ");
-        Serial.print(gy, 6); Serial.print(", ");
-        Serial.println(gz, 6);
+        Serial.print(calibGyro[0], 6); Serial.print(", ");
+        Serial.print(calibGyro[1], 6); Serial.print(", ");
+        Serial.println(calibGyro[2], 6);
     }
   }
 }

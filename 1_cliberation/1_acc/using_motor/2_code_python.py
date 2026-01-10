@@ -1,6 +1,8 @@
 # here it just simply reads the arduino averaged values and then simply scale it to g . and store it. 
 # 5 orientations is enough ( | straight , 45 deg / , -45 deg \ , 90 deg -- ,  sideways up )
-# then use magneto to get offset then check the 3_plot , 4_magnitude , 5_live magnitude
+# no need to change orientation by self . since we do it using 2 motors (best).
+# then use magneto / our code.file to get offset then check the 3_plot , 4_magnitude , 5_live magnitude
+#
 
 # close the data.txt tab - then read . verna it dosent store the values . 
 # also be inside the current folder in termainl and then run the code 

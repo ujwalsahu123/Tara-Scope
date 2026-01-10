@@ -4,20 +4,11 @@
 
 
 
-
-
-
-/////////////////// update the code ka setup() as per 1_basic.ino
-
-
-
-
 #include <Wire.h>
 #include "SparkFun_ISM330DHCX.h"
 SparkFun_ISM330DHCX myISM;
 // Structs for X,Y,Z data
 sfe_ism_raw_data_t rawGyroData; 
-
 
 
 void setup() {
@@ -45,24 +36,26 @@ void setup() {
     myISM.setBlockDataUpdate(); 
 	
 	// Wire.setClock(400000); // uncomment it if using 416hz or higher data rate , other wise comment it.
+		
 	
-	// Range -> always need to set, even if scaling maunally
-	myISM.setAccelFullScale(ISM_2g); 
-	myISM.setGyroFullScale(ISM_125dps); 
-
-	// DataRate -> 
-	myISM.setAccelDataRate(ISM_XL_ODR_104Hz); // data rate (best -> 104, 208, 416) (for faster use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12Hz5, 1Hz6 )
+	// DataRate -> 104Hz is good (fast & low noise) // can also try 208 or more in SF since it needs frequent values.
 	myISM.setGyroDataRate(ISM_GY_ODR_104Hz); // data rate (best -> 104, 208, 416) (for fast use -> 833, 1666, 3332, 6667) (for slower use -> 52, 26, 12 )
+
+
+	// Range -> always need to set, even if scaling maunally
+	myISM.setGyroFullScale(ISM_125dps); 
+	// test: in Motor_code if motor moves faster than 2g or 125dps then the sensor values can break - so in that senario we can do 4g or 250dps, but that can lower the precision. other jugad we can do is -> move motor slowly or etc.
+	// if you wanna update the range of acc or gyro then - not just you have to change the scaling factor , but again calib (as per that_range_lsb_data * that_range_scaling_factor) and get new offset.
 	
+
 	// Filter ->
-	myISM.setAccelFilterLP2(false); 
-	// myISM.setAccelSlopeFilter(ISM_LP_ODR_DIV_20); // can keep 10, 20. but best is to keep it off 
 	myISM.setGyroFilterLP1(false); // strictly off
 	
-	// fifo config (not much to do here, can try stream mode in SF, see 1_full_info.ino ka final setting section for more info)
+
+	// fifo config (not much to do here, can try stream mode in SF, see ISM/1_full_info.ino ka final setting section for more info)
 	myISM.setFifoMode(ISM_BYPASS_MODE); // fifo off (default)
 	
-	
+
 	delay(100);
   Serial.println("Settings applied.");
   Serial.println("t_ms,gx_lsb,gy_lsb,gz_lsb");

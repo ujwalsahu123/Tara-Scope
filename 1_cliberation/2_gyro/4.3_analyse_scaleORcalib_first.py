@@ -1,8 +1,7 @@
 # what to do ? 
 # // raw->scale->calib // or // raw->calib->scale //
 # which is better or have less noise binary noise
-
-
+# do  raw -> bias -> scale
 
 
 # ===== Bias comparison (first 1000 samples) =====

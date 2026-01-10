@@ -130,67 +130,67 @@
 # Python code
 
 
-# import serial
-# import keyboard
-# import time
+import serial
+import keyboard
+import time
 
-# # --- Configure your serial port ---
-# arduino = serial.Serial('COM7', 9600, timeout=0.1)  # <-- change this to your port
-# time.sleep(2)  # wait for Arduino to reset
+# --- Configure your serial port ---
+arduino = serial.Serial('COM7', 9600, timeout=0.1)  # <-- change this to your port
+time.sleep(2)  # wait for Arduino to reset
 
-# while True:
-#     # ----- Motor B (Altitude) -----
-#     if keyboard.is_pressed('up'):
-#         arduino.write(b'U')
+while True:
+    # ----- Motor B (Altitude) -----
+    if keyboard.is_pressed('up'):
+        arduino.write(b'U')
 
-#     elif keyboard.is_pressed('down'):
-#         arduino.write(b'D')
+    elif keyboard.is_pressed('down'):
+        arduino.write(b'D')
 
-#     # ----- Motor A (Azimuth) -----
-#     elif keyboard.is_pressed('right'):
-#         arduino.write(b'R')
+    # ----- Motor A (Azimuth) -----
+    elif keyboard.is_pressed('right'):
+        arduino.write(b'R')
 
-#     elif keyboard.is_pressed('left'):
-#         arduino.write(b'L')
+    elif keyboard.is_pressed('left'):
+        arduino.write(b'L')
 
-#     # ----- Precise movement -----
-#     elif keyboard.is_pressed('a'):
-#         arduino.write(b'a')
-#         # wait until key released (debounce)
-#         while keyboard.is_pressed('a'):
-#             time.sleep(0.02)
+    # ----- Precise movement -----
+    elif keyboard.is_pressed('a'):
+        arduino.write(b'a')
+        # wait until key released (debounce)
+        while keyboard.is_pressed('a'):
+            time.sleep(0.02)
 
-#     elif keyboard.is_pressed('d'):
-#         arduino.write(b'd')
-#         while keyboard.is_pressed('d'):
-#             time.sleep(0.02)
+    elif keyboard.is_pressed('d'):
+        arduino.write(b'd')
+        while keyboard.is_pressed('d'):
+            time.sleep(0.02)
 
-#     elif keyboard.is_pressed('w'):
-#         arduino.write(b'w')
-#         while keyboard.is_pressed('w'):
-#             time.sleep(0.02)
+    elif keyboard.is_pressed('w'):
+        arduino.write(b'w')
+        while keyboard.is_pressed('w'):
+            time.sleep(0.02)
 
-#     elif keyboard.is_pressed('s'):
-#         arduino.write(b's')
-#         while keyboard.is_pressed('s'):
-#             time.sleep(0.02)
+    elif keyboard.is_pressed('s'):
+        arduino.write(b's')
+        while keyboard.is_pressed('s'):
+            time.sleep(0.02)
 
 
-#     # ----- Read Arduino feedback -----
-#     if arduino.in_waiting > 0:
-#         try:
-#             msg = arduino.readline().decode().strip()
-#             if msg:
-#                 print(msg)
-#         except Exception:
-#             pass
+    # ----- Read Arduino feedback -----
+    if arduino.in_waiting > 0:
+        try:
+            msg = arduino.readline().decode().strip()
+            if msg:
+                print(msg)
+        except Exception:
+            pass
 
-#     # ----- Exit -----
-#     if keyboard.is_pressed('esc'):
-#         print("Exiting...")
-#         break
+    # ----- Exit -----
+    if keyboard.is_pressed('esc'):
+        print("Exiting...")
+        break
     
-#     time.sleep(0.006)  # small delay , this implacts the speed of arrow key movement. 0.006 is good.
+    time.sleep(0.006)  # small delay , this implacts the speed of arrow key movement. 0.006 is good.
 
-#################################################################################################################
+################################################################################################################
 

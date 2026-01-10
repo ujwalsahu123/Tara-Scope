@@ -1,0 +1,217 @@
+TaraScope – Arduino CLI + Python Workflow Notes
+==============================================
+
+1) Install Arduino CLI (Windows 64-bit)
+---------------------------------------
+Download:
+https://github.com/arduino/arduino-cli/releases
+
+File:
+arduino-cli_1.4.0_Windows_64bit.zip
+
+Extract anywhere (example):
+S:\ujwal sahu\Downloads\arduino-cli_1.4.0_Windows_64bit
+
+Add the folder containing:
+arduino-cli.exe
+to **User Environment Variable → PATH**  (press win -> search Environment variable -> Advance -> Environment variable -> press PATH in user env variable -> Edit -> NEW -> paste the folder path in which .exe file is there -> ok , ok , ok .) ( do like this also next times for adding Env variable and also Restart vs code...)
+
+Verify in CMD / PowerShell:
+arduino-cli version
+
+
+2) Initial Arduino CLI Setup in cmd
+----------------------------
+Generate config file:
+arduino-cli config init
+
+This creates:
+C:\Users\<username>\AppData\Local\Arduino15\arduino-cli.yaml
+
+Verify config:
+arduino-cli config dump
+
+
+3) Configure Arduino Libraries Location
+---------------------------------------
+Edit file:
+C:\Users\<username>\AppData\Local\Arduino15\arduino-cli.yaml
+
+Ensure this exists:  (path location in which the arudino libraries are there / so that we use that same libraries here also)
+directories:
+  user: S:\ujwal sahu\OneDrive\Documents\Arduino     
+
+
+(This makes Arduino CLI use the SAME libraries as Arduino IDE)
+
+
+4) Install Board Support in cmd (Arduino Uno / AVR)
+--------------------------------------------
+Update index:
+arduino-cli core update-index
+
+Install AVR core:
+arduino-cli core install arduino:avr
+
+
+5) Verify Arduino Connection in cmd
+----------------------------
+Plug Arduino Uno
+
+Check port:
+arduino-cli board list
+
+Example output:
+COM7  serial  Arduino Uno
+
+
+6) Create upload.bat (Single Universal Uploader)
+------------------------------------------------
+Location:
+TaraScope\tools\upload.bat
+
+(put the parent folder in which the upload.bat is there (aka S:\ujwal sahu\...\TaraScope\tools ) -> to Environment varibale PATH so it can be run from ANY folder)
+
+Usage:
+upload uno COM7 115200 file.ino
+
+Supports:
+- Any folder
+- Any .ino file
+- Arduino Uno / Nano / etc
+- Compile + Upload + Serial Monitor
+
+
+7) upload.bat Features
+----------------------
+- Auto-detect sketch folder
+- Fix Arduino requirement:
+  (main .ino name == folder name)
+- Uses Arduino IDE libraries
+- Shows compile errors in terminal
+- Opens Serial Monitor automatically
+
+
+8) Compile + Upload from Anywhere
+---------------------------------
+Examples:
+
+upload uno COM7 115200 TARA_SCOPE.ino
+
+upload uno COM7 115200
+"S:\ujwal sahu\Tara_Scope\1_calibration\4_final\1.1_Auto_calib.ino"
+
+
+9) Python + Arduino Workflow
+----------------------------
+- Python sends commands via Serial
+- Arduino performs calibration / sensor read
+- Python stores results in offsets.txt
+- Offsets sent back to Arduino on demand
+- No auto-offset on boot (manual trigger with 'g')
+
+
+10) Important Rules (Very Important)
+------------------------------------
+- .ino files must contain ONLY valid C/C++ code
+- Notes / explanations MUST be in:
+  - info.txt
+  - README.md
+  - comments (// or /* */)
+- NEVER paste plain English into .ino without comments
+- Arduino CLI is stricter than Arduino IDE
+
+
+11) Final Command Summary
+------------------------
+Check version:
+arduino-cli version
+
+List boards:
+arduino-cli board list
+
+Upload from anywhere:
+upload uno COM7 115200 file.ino
+
+
+Status: ✔ WORKING
+-----------------
+Arduino CLI + Python + Calibration system is stable.
+
+
+12) Installing Arduino Libraries (2 Ways)
+-----------------------------------------
+
+There are TWO ways to install Arduino libraries.
+We are using WAY 1 (recommended).
+
+-----------------------------------------
+WAY 1 (Recommended – Uses Arduino IDE)
+-----------------------------------------
+This is what we are already doing.
+
+Steps:
+1. Open Arduino IDE
+2. Go to:
+   Sketch → Include Library → Manage Libraries
+3. Search and install required libraries
+   (example: SparkFun ISM330DHCX, CheapStepper, etc.)
+
+Where libraries are stored:
+S:\ujwal sahu\OneDrive\Documents\Arduino\libraries
+
+Why this works:
+- Arduino IDE and Arduino CLI share the SAME library folder
+- No duplicate installs
+- No version mismatch
+- Arduino CLI automatically finds libraries
+
+✔ This is the BEST and simplest method
+
+
+-----------------------------------------
+WAY 2 (CLI-only Method – Optional)
+-----------------------------------------
+Use this ONLY if you do NOT have Arduino IDE installed.
+
+Example:
+arduino-cli lib update-index
+arduino-cli lib install "SparkFun 6DoF ISM330DHCX"
+arduino-cli lib install "CheapStepper"
+
+Libraries will still be installed into:
+directories.user (from arduino-cli.yaml)
+
+Downside:
+- Harder to manage
+- Library names must be exact
+- Less visual control
+
+
+-----------------------------------------
+How to Verify Library Installation
+-----------------------------------------
+Run:
+arduino-cli lib list
+
+Or check folder:
+S:\ujwal sahu\OneDrive\Documents\Arduino\libraries
+
+
+-----------------------------------------
+Important Rules for Libraries
+-----------------------------------------
+- Do NOT mix multiple library folders
+- Do NOT copy libraries manually unless necessary
+- Always include headers properly in .ino:
+  #include <Wire.h>
+  #include <SparkFun_ISM330DHCX.h>
+- If compilation fails:
+  → Check library name
+  → Check library path
+  → Check include order
+
+
+Status:
+✔ Library system is correctly configured
+✔ Arduino IDE + Arduino CLI are fully synced
