@@ -603,6 +603,7 @@ for (int i = 0; i < 3; i++)
   String endLine = Serial.readStringUntil('\n');   // reads "END" // for safety
   endLine.trim();
  
+  
   // I tested , it actally updates the offsets as per the offset.txt values
   // Serial.println(gyro_bias[0],6);
   // Serial.println(gyro_bias[1],6);
