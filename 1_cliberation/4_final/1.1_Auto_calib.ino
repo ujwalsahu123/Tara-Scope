@@ -297,8 +297,9 @@ unsigned long now = 0;
 
 // sending n decimal data to python   // UNO float can only handle till 6 decimals (more than this has representation error) 
 int n_gyro_bias = 6; // do 6 in uno, 8 in esp
-int n_acc_raw = 4; // do 2-4 in uno , 4-6 in esp
+int n_acc_raw = 4; // do 2-4 in uno , 4-6 in esp  (32343.123...)
 int n_mag_raw ; // later set...
+// for accel , mag ka offset/bias ka decimal -> go in the python and update from there -> because python hee calc offset/bias and then it stores in offset.txt
 
 
 // #######################   CONFIG GYRO   ####################### 
@@ -314,7 +315,10 @@ double gyro_bias[3] = { 44.295409, -169.449102, 72.213573}; // // Hardcode Gyro 
 #define AVG_MEAS  25 // take Avg of N readings to get 1 stable reading /per orientation.
 
 const int STEPS_PER_REV = 4096;
-const int N_orientations = 64 ;
+// const int N_orientations = 64 ;
+
+const int N_orientations = 4 ;
+
 //SET THIS //(value must be -> 2^N). [VALUES -> (1 = 360Deg) (2 = 180Deg) (4 = 90Deg) (8 = 45Deg) (16 = 22.5Deg) (32 = 11.25Deg) (64 = 5.625Deg) (128 = 2.8125Deg) (256 = 1.4Deg)]
 const int STEPS_to_move_per_orientation = (STEPS_PER_REV / N_orientations) ;
 // So if 4096/1_orientation => so 4096_steps_per_orientation to complete 1 full rotation. if 4096/2_orientaitons => so 2048_step)per_orientation and it will take 2 orientatins to complete 1 full rotation.      
@@ -322,17 +326,24 @@ const int STEPS_to_move_per_orientation = (STEPS_PER_REV / N_orientations) ;
 // Hardcoded offset and bias - (g_2g_Nofilter_0.97859) 
 // change it as per filter you use.
 // 1 time Calib when in new Location.
+
 double A_acc[3][3] = 
-{{0.97522389, 0.00009342, -0.00058922},
- {0.00009342, 0.98066595, 0.00053047},
- {-0.00058922, 0.00053047, 0.98232234}};
-double b_acc[3] = { 0.00500114, -0.01523379, 0.01161619}; 
+{{1.0, 1.0, 1.0},
+ {1.0, 1.0, 1.0},
+ {1.0, 1.0, 1.0}};
+double b_acc[3] = { 1.0, 1.0, 1.0}; 
+
+// double A_acc[3][3] = 
+// {{0.97522389, 0.00009342, -0.00058922},
+//  {0.00009342, 0.98066595, 0.00053047},
+//  {-0.00058922, 0.00053047, 0.98232234}};
+// double b_acc[3] = { 0.00500114, -0.01523379, 0.01161619}; 
 // ################################################################
 
 
 
 double rawAcc[3] =  {0.0, 0.0, 0.0};
-double calibAccel[3] = {0.0, 0.0, 0.0};
+double calibAccel[3] = {0.0, 0.0,0.0};
 double calibGyro[3] = {0.0,0.0,0.0} ;
 long count = 0; // iterator for Average readings
 
@@ -345,12 +356,16 @@ long gX = 0, gY = 0, gZ = 0; // for storing Average readings
 
 void calc_gyro_bias()
 {
+
+  delay(100); // # 100 milliseconds dealy IMP, keep 100 only.
+  // Nothing printing here for handshake,since no need - we gonna directly send the data to python.
+
   // calculate the bias - by readings 1000 values and doing avg of that.
   gX = 0; gY = 0; gZ = 0;
   count = 0;
   lastRead = 0;
 
-  Serial.println("Keep gyro STILL for calibration ......");
+  Serial.println("Keep Sensor STILL for Gyro calibration ......");
   delay(1000); // wait 
 
   // Run loop for to collect 1000 samples
@@ -377,7 +392,7 @@ void calc_gyro_bias()
   lastRead = 0;
 
 
-  // calculated the bias(lsb) and Update the Hardcoded bias
+  // calculated the bias(lsb) and Update the Hardcoded gyro_bias[]
   gyro_bias[0] = (float)gX / count;
   gyro_bias[1] = (float)gY / count;
   gyro_bias[2] = (float)gZ / count;
@@ -390,7 +405,7 @@ void calc_gyro_bias()
     Serial.println(gyro_bias[2], n_gyro_bias);
 
 
-  delay(1000);
+  delay(500); // not necessary but good.
 
 }
 
@@ -432,7 +447,6 @@ void Read_Accel_data()
     az /= AVG_MEAS;
 
     // Send AVG RAW LSB ONLY , and in python it will scale
-    Serial.print("Accel Raw data");
     Serial.print(ax, n_acc_raw); Serial.print(",");   // sending n decimals 
     Serial.print(ay, n_acc_raw); Serial.print(",");
     Serial.println(az, n_acc_raw);
@@ -448,8 +462,10 @@ void calc_acc_offset()
   // cannot do calculation of ACC offset and bias over here .
   // so we simply print the raw values and python collects these datapoint and scales it then calculate the offset and bias and stores it in offset.txt and also sends it here to update the harcoded values.
  
-  Serial.println("\n--- ACC CALIBRATION START ---");
-  delay(1000);
+  delay(100); // # 100 milliseconds dealy IMP, keep 100 only.
+  Serial.println("ACC_RAW_DATA_SHARING_START"); // for handshake - to tell python that collect the data
+  
+  delay(1000); // for stabilization // keep
 
       //////////////////////////// MOVEMENT 1 -> Alt motor full rotation - from Initial orientation
       for (int i = 0; i < N_orientations ; i++)  // take reading for full circle - 
@@ -504,31 +520,102 @@ void calc_acc_offset()
         delay(2000); 
         Read_Accel_data();
       }
-      delay(1000);
+      delay(1000); // keep
       motorAlt.move(false, (STEPS_PER_REV/4)); // move the alt motor back to -90 degree (back to inital orientation)
       // So now we are OG back to OG inital orientation.
+      delay(100); // keep
+      Serial.println("ACC_RAW_DATA_SHARING_DONE"); // finished sending raw accel data to Python
+  
+
+
+
+      // ---- HANDSHAKE ----
+      while(!Serial.available())         // wait for python to send the msg that it is sending updated offset/bias values.
+      { 
+        dealyt(100); // keep // let python write the data first before arduino reads.
+
+        // read single line from python
+        String msg = Serial.readStringUntil('\n');
+        msg.trim();
+        
+        if(msg == "REQUEST_FOR_SENDING_UPDATED_VALUES")
+        { 
+          Serial.println("READY_FOR_UPDATED_VALUES"); 
+          break; // exit the while loop
+        }
+        else if(msg == "ACCEL_CALIB_FAILED")
+        {
+          Serial.println("ERROR_GETTING_UPDATED_VALUES"); // something went wrong
+          return; // exit the function - without updating the hardcoded values.
+        }
+        else{
+          Serial.println(msg); // for debugging
+          return; // exit the function - without updating the hardcoded values.
+        }
+      }
+
+// ---------------------- get new Accel offset/bias from python and update the  hardcoded once --------------------------
       
-      delay(1000);
+      // ---- ACC BIAS ----
+      delay(100); // Imp, let python first read that data sharing is done, and let it store the values in offset.txt then it sends the values ,, and after that only arduino should read it..
+      String line = Serial.readStringUntil('\n');
+      line.trim();  // "ACC_B,0.0045,-0.0148,0.0123"
+
+      if (line.startsWith("ACC_B"))
+      {
+        int p1 = line.indexOf(',');
+        int p2 = line.indexOf(',', p1 + 1);
+        int p3 = line.indexOf(',', p2 + 1);
+  
+        b_acc[0] = line.substring(p1 + 1, p2).toFloat();
+        b_acc[1] = line.substring(p2 + 1, p3).toFloat();
+        b_acc[2] = line.substring(p3 + 1).toFloat();
+      }
+
+      // ---- ACC MATRIX ----
+      Serial.readStringUntil('\n'); // consumes "ACC_A"
+
+      for (int i = 0; i < 3; i++)
+      {
+        line = Serial.readStringUntil('\n');
+        line.trim();
+  
+        int p1 = line.indexOf(',');
+        int p2 = line.indexOf(',', p1 + 1);
+  
+        A_acc[i][0] = line.substring(0, p1).toFloat();
+        A_acc[i][1] = line.substring(p1 + 1, p2).toFloat();
+        A_acc[i][2] = line.substring(p2 + 1).toFloat();
+      }
 
 
-
-///// NOT HERE -> do in final_calib
-///////////  so python collecte the raw data and scaled it , and stored it in offset.txt 
-// now ask python for the updated bias and offset values. 
-///////// and update the hardcoded offset and bias. and print also
-// imp -> problem -> the offset that we calculate in python has 10 decimals but arudino cannot take 10 decimals i think -- check how much decimals can the aruino float store .... and as per that we send round off till 6 or 7 decimal place ka offset and bias we send here.
-
-//   acc_bias[0] = ;
-//   acc_bias[1] = ;
-//   acc_bias[2] = ;
-//   Serial.println("Updated offset and bias ");
-//   Serial.print("bx = "); Serial.print(acc_bias[0], 6) .....;
-// //   .........
+  Serial.println(b_acc[2],6 );
+  Serial.println(A_acc[0][0],6 );
+  Serial.println(A_acc[0][1],6 );
+  Serial.println(A_acc[0][2],6 );
+  Serial.println(A_acc[1][0],6 );
+  Serial.println(A_acc[1][1],6 );
+  Serial.println(A_acc[1][2],6 );
+  Serial.println(A_acc[2][0],6 );
+  Serial.println(A_acc[2][1],6 );
+  Serial.println(A_acc[2][2],6 );
+      
 
 
+      // ---- END ----
+      line = Serial.readStringUntil('\n');
+      line.trim();
 
-  Serial.println("--- Accel CALIBRATION DONE ---\n");
-  delay(1000);
+      if(line == "END")
+      {
+        Serial.println("ACC_UPDATED"); // for handshake -> that we got the offset/bias from python and updated the 
+      }
+      else{
+      Serial.println("Error");  // Python dosent print END after sending values... or etc error
+    }
+
+  delay(500); // keep
+
 }
 
 
@@ -536,13 +623,12 @@ void calc_acc_offset()
 // GET INITIAL OFFSET/BIAS FROM PYTHON
 // =======================================================
 
-bool use_file_offsets = false; // for debugging
 
 void requestOffsetsFromPython()
 {
   delay(100); // # 100 milliseconds dealy IMP, keep 100 only.
   Serial.println("READY_FOR_OFFSETS");
-
+  
   unsigned long t0 = millis();
   while (!Serial.available())
   {
@@ -552,6 +638,11 @@ void requestOffsetsFromPython()
       return;
     }
   }
+
+//  can put a handshake here ... ...
+// then delay
+
+delay(500); // imp, let python send the values fully before the arduino reads.. (other wise arduino will read first before python sending)
 
 // ---- GYRO ----
 String line = Serial.readStringUntil('\n');
@@ -577,7 +668,7 @@ if (line.startsWith("ACC_B"))
   int p1 = line.indexOf(',');
   int p2 = line.indexOf(',', p1 + 1);
   int p3 = line.indexOf(',', p2 + 1);
-
+  
   b_acc[0] = line.substring(p1 + 1, p2).toFloat();
   b_acc[1] = line.substring(p2 + 1, p3).toFloat();
   b_acc[2] = line.substring(p3 + 1).toFloat();
@@ -590,48 +681,114 @@ for (int i = 0; i < 3; i++)
 {
   line = Serial.readStringUntil('\n');
   line.trim();
-
+  
   int p1 = line.indexOf(',');
   int p2 = line.indexOf(',', p1 + 1);
-
+  
   A_acc[i][0] = line.substring(0, p1).toFloat();
   A_acc[i][1] = line.substring(p1 + 1, p2).toFloat();
   A_acc[i][2] = line.substring(p2 + 1).toFloat();
 }
 
 
-  String endLine = Serial.readStringUntil('\n');   // reads "END" // for safety
-  endLine.trim();
+line = Serial.readStringUntil('\n');   // reads "END" // for safety
+line.trim();
  
-  
-  // I tested , it actally updates the offsets as per the offset.txt values
-  // Serial.println(gyro_bias[0],6);
-  // Serial.println(gyro_bias[1],6);
-  // Serial.println(gyro_bias[2],6);
-  // Serial.println(b_acc[0],6 );
-  // Serial.println(b_acc[1],6 );
-  // Serial.println(b_acc[2],6 );
-  // Serial.println(A_acc[0][0],6 );
-  // Serial.println(A_acc[0][1],6 );
-  // Serial.println(A_acc[0][2],6 );
-  // Serial.println(A_acc[1][0],6 );
-  // Serial.println(A_acc[1][1],6 );
-  // Serial.println(A_acc[1][2],6 );
-  // Serial.println(A_acc[2][0],6 );
-  // Serial.println(A_acc[2][1],6 );
-  // Serial.println(A_acc[2][2],6 );
-  
 
-  if(endLine == "END")
+// // I tested , it actally updates the offsets as per the offset.txt values
+Serial.println(gyro_bias[0],6);
+Serial.println(gyro_bias[1],6);
+Serial.println(gyro_bias[2],6);
+Serial.println(b_acc[0],6 );
+Serial.println(b_acc[1],6 );
+Serial.println(b_acc[2],6 );
+Serial.println(A_acc[0][0],6 );
+Serial.println(A_acc[0][1],6 );
+Serial.println(A_acc[0][2],6 );
+Serial.println(A_acc[1][0],6 );
+Serial.println(A_acc[1][1],6 );
+Serial.println(A_acc[1][2],6 );
+Serial.println(A_acc[2][0],6 );
+Serial.println(A_acc[2][1],6 );
+Serial.println(A_acc[2][2],6 );
+  
+  
+  if(line == "END")
   {
     Serial.println("Updated all offset/bias values");
-    use_file_offsets = true; // for degugging, etc 
   }
   else{
     Serial.println("Error");  // Python dosent print END after sending values... or etc error
   }
-
+  
   delay(500); // keep
+}
+
+
+
+// =======================================================
+// PRINT CALIBRATED DATA
+// =======================================================
+void Calib_Output_Print()
+{
+  if (myISM.getRawGyro(&rawGyro) && myISM.getRawAccel(&rawAccel))
+    {
+      
+        // ----------------------------GYRO---------------------------------------------
+        // first Calib with offset/bias_lsb then Scale it
+        
+        // -------- Raw_LSB -> CALIB using bias_Lsb -> Calib_Lsb --------
+        // (Calib_Lsb = Raw_LSB - Bias_Lsb)
+        calibGyro[0] = rawGyro.xData - gyro_bias[0];
+        calibGyro[1] = rawGyro.yData - gyro_bias[1];
+        calibGyro[2] = rawGyro.zData - gyro_bias[2];
+
+        // -------- Calib_Lsb -> Scale to -> Calib_Dps --------
+        calibGyro[0] *= GYRO_Scale_DPS;
+        calibGyro[1] *= GYRO_Scale_DPS;
+        calibGyro[2] *= GYRO_Scale_DPS;
+
+
+        // -------------------------------------Accel----------------------------------------
+        // first scale then calib with scaled_offset/bias.
+        
+        // -------- LSB -> SCALE TO g  --------
+        // (we are not doing 0.061 since that's mg not g. and the sf wants g . dont do 0.000061, since that has binary representation noise)
+        rawAcc[0] = (rawAccel.xData) * ACC_LSB_TO_G ;
+        rawAcc[1] = (rawAccel.yData) * ACC_LSB_TO_G;
+        rawAcc[2] = (rawAccel.zData) * ACC_LSB_TO_G;
+
+        // -------- SCALED -> CALIB --------
+        // -------- Raw_g -> CALIB using offset/bias_g -> Calib_g  --------
+        calibAccel[0] = A_acc[0][0] * (rawAcc[0] - b_acc[0]) + A_acc[0][1] * (rawAcc[1] - b_acc[1]) + A_acc[0][2] * (rawAcc[2] - b_acc[2]);
+        calibAccel[1] = A_acc[1][0] * (rawAcc[0] - b_acc[0]) + A_acc[1][1] * (rawAcc[1] - b_acc[1]) + A_acc[1][2] * (rawAcc[2] - b_acc[2]);
+        calibAccel[2] = A_acc[2][0] * (rawAcc[0] - b_acc[0]) + A_acc[2][1] * (rawAcc[1] - b_acc[1]) + A_acc[2][2] * (rawAcc[2] - b_acc[2]);
+
+
+        // ------------------------------------------PRINT---------------------------------------------------------
+        ///// in sf - instead of prining we give it to sf. 
+        Serial.print("Gyro calib :  ");
+        Serial.print(calibGyro[0], 6); Serial.print(", ");
+        Serial.print(calibGyro[1], 6); Serial.print(", ");
+        Serial.print(calibGyro[2], 6);
+        
+        
+        // ------- Calculate magnitude of the calibrated vector
+        // at static position the magnitude should be same as g value
+        double magnitude = sqrt(calibAccel[0] * calibAccel[0] + calibAccel[1] * calibAccel[1] + calibAccel[2] * calibAccel[2]);  // no need to do in sf.
+        
+        // Print calibrated data (X, Y, Z) and the magnitude // in sf we will not print it , but give it to the sf. 
+        Serial.print("     Accel calib :  ");
+        Serial.print(calibAccel[0], 5); Serial.print(", ");
+        Serial.print(calibAccel[1], 5); Serial.print(", ");
+        Serial.print(calibAccel[2], 5);
+        Serial.print(" | Magnitude: ");
+        Serial.println(magnitude, 5);
+       } 
+      else 
+       {
+        Serial.println("Failed to read Sensor data.");
+       }
 }
 
 
@@ -708,6 +865,8 @@ void setup() {
 // =======================================================
 // LOOP
 // =======================================================
+bool streamEnabled = true;
+
 void loop()
 {
   if (Serial.available())
@@ -722,19 +881,62 @@ void loop()
     switch (cmd)
     {
       case 'g':
-      Serial.println("\n--- Offset Load Triggered ---");
+      // Serial.println("\n--- Offset Load Triggered ---");
+      streamEnabled = false;
       requestOffsetsFromPython(); // get latest offset/bias from the offset.txt using python.
+      streamEnabled = true;
       break;
 
       case 'j':
-        Serial.println("\n--- Gyro Calibration Triggered ---");
+        // Serial.println("\n--- Gyro Calibration Triggered ---");
+        streamEnabled = false;
         calc_gyro_bias();
+        streamEnabled = true;
         break;
 
       case 'l':
-        Serial.println("\n--- Accel Calibration Triggered ---");
+        // Serial.println("\n--- Accel Calibration Triggered ---");
+        streamEnabled = false;
         calc_acc_offset();
+        streamEnabled = true;
         break;
+
+      case 'p':
+        // print all offset/bais values , good for debugging and see if the offset.txt values or calib values actually updated or not.
+        streamEnabled = false;
+        delay(100);// imp
+        Serial.print("GYRO: ");
+        Serial.print(gyro_bias[0],6);Serial.print(", ");
+        Serial.print(gyro_bias[1],6);Serial.print(", ");
+        Serial.println(gyro_bias[2],6);
+        Serial.print("B_ACC: ");
+        Serial.print(b_acc[0],6 );Serial.print(", ");
+        Serial.print(b_acc[1],6 );Serial.print(", ");
+        Serial.println(b_acc[2],6 );
+        Serial.print("A_ACC: ");
+        Serial.print(A_acc[0][0],6 );Serial.print(", ");
+        Serial.print(A_acc[0][1],6 );Serial.print(", ");
+        Serial.print(A_acc[0][2],6 );Serial.print(", ");
+        Serial.print(A_acc[1][0],6 );Serial.print(", ");
+        Serial.print(A_acc[1][1],6 );Serial.print(", ");
+        Serial.print(A_acc[1][2],6 );Serial.print(", ");
+        Serial.print(A_acc[2][0],6 );Serial.print(", ");
+        Serial.print(A_acc[2][1],6 );Serial.print(", ");
+        Serial.println(A_acc[2][2],6 );
+        Serial.println("DONE");
+        streamEnabled = true;
+        break;
+      
+      case 'y':
+        // to display 10 calib_output values in terminal. (no need , just for degubbing)
+        streamEnabled = false;
+        delay(100);
+        for(int i = 0 ; i < 10 ; i++) 
+        { Calib_Output_Print(); }
+        Serial.println("DONE");
+        streamEnabled = true;
+        break;
+         
 
       default:
         break;
@@ -744,67 +946,12 @@ void loop()
   now = micros();
   if (now - lastRead >= PERIOD_US)
   {
+
     lastRead = now;
-    
-    if (myISM.getRawGyro(&rawGyro) && myISM.getRawAccel(&rawAccel))
+    if(streamEnabled)
     {
-        // ----------------------------GYRO---------------------------------------------
-        // first Calib with offset/bias_lsb then Scale it
-        
-        // -------- Raw_LSB -> CALIB using bias_Lsb -> Calib_Lsb --------
-        // (Calib_Lsb = Raw_LSB - Bias_Lsb)
-        calibGyro[0] = rawGyro.xData - gyro_bias[0];
-        calibGyro[1] = rawGyro.yData - gyro_bias[1];
-        calibGyro[2] = rawGyro.zData - gyro_bias[2];
-
-        // -------- Calib_Lsb -> Scale to -> Calib_Dps --------
-        calibGyro[0] *= GYRO_Scale_DPS;
-        calibGyro[1] *= GYRO_Scale_DPS;
-        calibGyro[2] *= GYRO_Scale_DPS;
-
-
-        // -------------------------------------Accel----------------------------------------
-        // first scale then calib with scaled_offset/bias.
-        
-        // -------- LSB -> SCALE TO g  --------
-        // (we are not doing 0.061 since that's mg not g. and the sf wants g . dont do 0.000061, since that has binary representation noise)
-        rawAcc[0] = (rawAccel.xData) * ACC_LSB_TO_G ;
-        rawAcc[1] = (rawAccel.yData) * ACC_LSB_TO_G;
-        rawAcc[2] = (rawAccel.zData) * ACC_LSB_TO_G;
-
-        // -------- SCALED -> CALIB --------
-        // -------- Raw_g -> CALIB using offset/bias_g -> Calib_g  --------
-        calibAccel[0] = A_acc[0][0] * (rawAcc[0] - b_acc[0]) + A_acc[0][1] * (rawAcc[1] - b_acc[1]) + A_acc[0][2] * (rawAcc[2] - b_acc[2]);
-        calibAccel[1] = A_acc[1][0] * (rawAcc[0] - b_acc[0]) + A_acc[1][1] * (rawAcc[1] - b_acc[1]) + A_acc[1][2] * (rawAcc[2] - b_acc[2]);
-        calibAccel[2] = A_acc[2][0] * (rawAcc[0] - b_acc[0]) + A_acc[2][1] * (rawAcc[1] - b_acc[1]) + A_acc[2][2] * (rawAcc[2] - b_acc[2]);
-
-
-
-
-        // ------------------------------------------PRINT---------------------------------------------------------
-        ///// in sf - instead of prining we give it to sf. 
-        Serial.print("Gyro calib :  ");
-        Serial.print(calibGyro[0], 6); Serial.print(", ");
-        Serial.print(calibGyro[1], 6); Serial.print(", ");
-        Serial.print(calibGyro[2], 6);
-        
-        
-        // ------- Calculate magnitude of the calibrated vector
-        // at static position the magnitude should be same as g value
-        double magnitude = sqrt(calibAccel[0] * calibAccel[0] + calibAccel[1] * calibAccel[1] + calibAccel[2] * calibAccel[2]);  // no need to do in sf.
-        
-        // Print calibrated data (X, Y, Z) and the magnitude // in sf we will not print it , but give it to the sf. 
-        Serial.print("     Accel calib :  ");
-        Serial.print(calibAccel[0], 5); Serial.print(", ");
-        Serial.print(calibAccel[1], 5); Serial.print(", ");
-        Serial.print(calibAccel[2], 5);
-        Serial.print(" | Magnitude: ");
-        Serial.println(magnitude, 5);
-    } 
-    else {
-        Serial.println("Failed to read Sensor data.");
+    // Calib_Output_Print(); // in sf -> in this function we will not print the calib values , but do SF ... 
     }
-
   }
 
 }
