@@ -1,62 +1,31 @@
-# write code so that i sends cmd -> j k l -> to arduino -> for calib gyro , mag , acc.  (single tab - not like press karke rakha hai to 10-20 times it send "j" .... cmd ....use the laser wala code how implmented the single tab functionality)
+# so Earlier what we are doing was -> manually running the calib code and using py to store the data into a .txt file then using Magneto software to find offsets and storing the offsets in a file then use that offset to do gyro and calib .  , and etc stuff ....
+# but why to do all this much - things needs to be easy and automated. So thats why we write final/Auto_calib code.
+# final_Auto_calib code is a mix of accel,gyro,mag - Auto calib codes + Local_g + Mag_field calcualtion code + some features like send offsets.txt ka offset/bias to arduino , print offset values , etc.
 
-# 1) arduino asks for offsets and bias from the python and python sees that code and gives the offsets from offset.txt
-# arduino always asks for offsets -> so write this part in setup() code. and if it fails to get or etc -> then it uses the hardcoded one -> 
-# so write hardcoded offsets and bias and if it gets from python then it updates those arrays ... and uses that new one. and if it dosent get then it simply uses those hardcoded one.
-# if it not able to get the data then send - not_available. and when ard sees not available it uses just prints not able to fetch offset.txt and simply dosent updates the hardcoded one - and uses that only.
+# for example -> At every stargazing session - the tarascope device needs to do accel/mag/gyro calib at startup. 
+# So when ever we connect the hardware and place it properly and Give single commands "calib/etc" from python to the ard.ino code then that arudino code ka Auto_calib() function will run when we calib and store the offsets in in a global variable , and we use those variables to get raw->scale->calib->sf.
+# So here we did Calibration Abstraction - and we simply plub the device / or connect with wifi and give one single command , and it does calib by self. // this is awesome - since later at the time of 3_motor_code or 4_star_pointing then we dont have to hop on this/that code to do calib and we can quicky calib and using signle cmds and work on top.
 
-# 2) it calculates the offset/ bias and updates the hardcode/offset.txt say joo mila.  and prints it.
+#############################################################################################################################
 
-# 3) the python wait and gets the new printed offset , bias and then stores it in offset. (and it knows ki konsa offset bias update krna hai - acc or gyro or mag kaa since we press that specific key "k" mag, "j" gyro... ) 
-# if ard fails to calc the offset/bias then it prints - cant calculate , and py sees it and thus it dosent update the offse.txt and moves onn in the code .
-
-# ard code -> will be like -> in loop() function it checks for any cmd like -> j k l . and using a switch cmd it calls that calib function....  and below that switch cmd -> the timer will be there for 104hz - and it calculates the calib values and prints it, and the py file shows that printed calib values in terminal
-# 4) 
-
-# 5) so now what happens is ardu get the latest offsets from py . and stores the latest once, and if not calc the offset then no update in offset.txt file. and if not able to get offset from offset.txt file then also no worries and the arduino uses the hardcoded once.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# 0) so initally the arduino uses hardcoded offset/bias values in its code for calib.
 # 1) g  → send latest offsets.txt values to → Arduino (so it can update hardcoded values)
 # 2) h  → compute local_g + magnetic field → offsets.txt  (before doing "j" / "l" -> you first must do "h")
 # 3) j  → gyro calibration (Arduino calcualtes the bias then sends to → Python which stores it in → offsets.txt)
-# 4) l  → accel calibration (Arduino prints → Python collects & computes)
-# 5) k  → Mag calib ...
-# 6) q  → quit
-# p = print offset/bias used in Arduino
-# y = print 10 calib output values
+# 4) l  → accel calibration (Arduino prints Raw data → Python collects it , Scales it, used Local_g from offset.txt & computes the offset/bias → stores in offsets.txt + sends to Arduino)
+# 5) k  → Mag calib ... ( make same as l )
+# 6) p  → print offset/bias used in Arduino
+# 7) y  → print 10 calib output values
+# 8) q  → quit
 
 # hardcoded values -> fine but not best. (intially it uses this hardcoded values for calib)
 # 1st always do "g" when you RUN the code (so that we get last calibrated offset/bias values , so that it updates those hardcoded values and use this once for calib)
-# then always do "j" gyro calib after 1 min of startup , it also getes updates in offset.txt using python (dont need to do this after every Run , but do this after some hrs has passed from when you previously did)
+# then always do "j" gyro calib after 1 min of startup , it also gets updates in offset.txt using python (dont need to do this after every Run - you can do "g" after every run, but do this after some hrs has passed from when you previously did "j" gyro calib)
 # do "h" only & always before when you want to do "l" acdel calib , or "k" mag calib.  
 # do "l" always when you are on a new location or new height. (more than 1km away from previously calib location , or more than 100meter height difference - then only do ... else not)
 # do "k" when at a new location (when you do "l")  OR  when you are in a new setup (ex- you put phone nearby... or placed the device somewhere else ...)
 
-# works -> h , g , j , p , y,  
+# works -> h , g , j , p , y, l , q , 
 # so i tested the code and it actaully works ...
 # first i did "p" to see the hardcoded values and "y" to see the output values.
 # then i did "h" to compute new local_g and mag_field .
@@ -64,7 +33,8 @@
 # then i did "j" and it did gyro_calib , and i saw the offset.txt and it actually updated there, i did "p" to see the hardcoded upates and the gyro was actually updated
 # then i did "l" to do accel calib & it actaully updated the offset.txt and then i did "p" and "y" to saw that the arduino hardcoded values were updated.
 
-######################################################################################################
+#############################################################################################################################
+
 # // NOTE:
 # // Arduino continuously streams sensor data in loop(), which fills the serial buffer.
 # // Before doing a command-based handshake (like loading offsets),
@@ -84,12 +54,27 @@
 # for now we need the method for sync ... but i dont think we need it later .... 
 # since we are using this technique so that we clear the buffer and then the handshake msg happens , but if later we dont print accel, gyro , mag values then the buffer will be empty -> thus no need to clear the buffer.
 # but still we can keep this technique for safety
-##########################################################################################################
+
+#############################################################################################################################
 
 # NOTE for later -> here we take input like cmd_press + enter , but in laser pointing we do like keyboard.press ..... 
 # so when we mix THIS code with Laser wala code then need to choose a single technique. 
 # the cmd+enter technique is better but in that we cant do Arrow button fast movement ... , space_bar laser toggle , (Py dosent always reads data from arduino....)
 # so need to think on this... (cmd+enter wala rakha and think how to mix the arrow button , etc with this...)
+
+
+#xtra:
+# serial.write() only accepts bytes (not string , etc) . so there are 2 ways to make string to bytes. 
+# 1) ser.write(b"string here")  # when you have fixed string
+# 2) ser.write(f"string {var}".encode()) # when you make a string and then convert it ot byte.
+
+#############################################################################################################################
+
+
+
+
+
+
 
 
 
@@ -248,75 +233,125 @@ def update_geo_values(g_local, mag_field):
     print("✔ LOCAL_G and MAG_FIELD updated in offsets.txt\n")
 
 
-# ================= SEND LATEST OFFSET/BIAS =================
+# ================= SEND LATEST OFFSET/BIAS FROM OFFSET.TXT TO ARDUINO =================
 
 def send_offsets_to_arduino():
-    if not os.path.exists(OFFSET_FILE):
-        print("offsets.txt not found")
-        return
 
-    # read file
-    with open(OFFSET_FILE, "r") as f:
-        lines = [l.strip() for l in f if l.strip() and not l.startswith("#")]
-
-    data = {}
-    for l in lines:
-        k, v = l.split("=")
-        data[k] = v
-
-    # ---------- SAFETY CHECK ----------
-    required = ["GYRO", "ACC_B", "ACC_A"]
-    for k in required:
-        if k not in data:
-            raise RuntimeError(f"{k} missing in offsets.txt")
-
-    # Flush BEFORE handshake, never after
+    # Flush BEFORE handshake
     time.sleep(0.05)   # 50 milliseconds dealy to get sync , and then clear the buffer. other wise even after clearing the buffer some values (accel , gyro contineously printed values) slip in the buffer.
     flush_serial()  # need to clear the buffer -> other wise the python reads all that old accel , gyro contineously printed values , which are in buffer.
 
+    failure = False  # flag to track any failure in getting offsets
 
-    # wait for Arduino ready # handshake
+    # ---- CHECK FILE EXISTS ----
+    if not os.path.exists(OFFSET_FILE):
+        print("offsets.txt not found")
+        failure = True 
+    
+    # ---- READ FILE ----
+    if failure != True:
+        data = {}
+        with open(OFFSET_FILE, "r") as f:
+            for l in f:
+                l = l.strip()
+                if not l or l.startswith("#"):
+                    continue
+                k, v = l.split("=")
+                data[k] = v
+
+        for k in ["GYRO", "ACC_B", "ACC_A"]:
+            if k not in data:
+                raise RuntimeError(f"{k} missing")
+                failure = True
+
+    # ---- HANDLE FAILURE Handshake ----
+    if failure == True:
+        ser.write(b"FAILED_GETTING_OFFSETS\n") # tell arduino that python was not able to get the offsets from offset.txt
+        while True:
+            if ser.in_waiting:
+                msg = ser.readline().decode().strip()
+
+            if not msg:
+                continue     # 👈 ignore blank lines
+            
+            print("ARDUINO:", msg) # good for seeing what did arduino send in buffer.
+            
+            if msg == "ERROR_GETTING_UPDATED_VALUES":
+                print("❌Error occured, Safely exiting from - Arduino & Python function\n")
+                return
+            else :
+                print("❌Any Error Occured.(arduino was not even able to read the error msg from python -> 'FAILED_GETTING_OFFSETS' ) still exiting from - Arduino & Python function\n")
+                return 
+            
+            time.sleep(0.01) # add dealy since otherwise it loops millions of times per sec
+
+
+    # safe to move forward - we have all offsets/bias values
+
+    # ---- HandShake WAIT FOR ARDUINO READY ----
+    ser.write(b"REQUEST_FOR_SENDING_UPDATED_VALUES\n")
+    print("PYTHON: REQUEST_FOR_SENDING_UPDATED_VALUES")
+
     while True:
         if ser.in_waiting:
             msg = ser.readline().decode().strip()
+            
+            if not msg:
+                continue     # 👈 ignore blank lines
+            
             print("ARDUINO:", msg) # good for seeing what did arduino send in buffer.
-            if msg == "READY_FOR_OFFSETS":
+            
+            if msg == "READY_FOR_UPDATED_VALUES":
+                print("Sending Updated Values To Arduino")
                 break
+            
+            else:
+                print("❌ Any Error may occured, While HandShake. Exit from - Arduino & Python Calib function \n")
+                return # exit this function if any error occurs
+            
         time.sleep(0.01) # add dealy since otherwise it loops millions of times per sec
 
     # dont put any delay here... other wise arduino will read before python send values
-    # time.sleep(0.10)
 
-    # send values
-    ser.write(f"GYRO,{data['GYRO']}\n".encode())
+    # ---- SEND DATA ----
+    ser.write(f"GYRO,{data['GYRO']}\n".encode())          #### we send the values as it is in offset.txt and not do like :.6f , etc. (since while storing we put it in 6 decimnals , etc)
     ser.write(f"ACC_B,{data['ACC_B']}\n".encode())
     ser.write(b"ACC_A\n")
 
     for row in data["ACC_A"].split(";"):
         ser.write((row + "\n").encode())
 
-    ser.write(b"END\n") # for safety
+    ser.write(b"END\n")
 
-    time.sleep(0.10) # 100ms dealy. not necessary , but good .
 
-# wait for Arduino to tell if it actually updated the values # handshake
+   # ---- HandShake WAIT FOR confirmation that arduino actually updated the hardcoded values. ----
     while True:
         if ser.in_waiting:
             msg = ser.readline().decode().strip()
-            print("ARDUINO:", msg) # good for seeing what did arduino send in buffer.
-            if msg == "Updated all offset/bias values":
-                print("✔ Done updating\n")
+
+            if not msg:
+                continue     # 👈 ignore blank lines
+
+            print("ARDUINO:", msg)
+
+            if msg == "OFFSETS_UPDATED":
+                print("✔ Offsets updated on Arduino\n")
                 break
+            
             elif msg == "Error":
-                print("Any Error may occured, Arduino was not able to catch 'END' or Read the offset values from python\n")
-                break
+                print("❌ Arduino failed to update offsets\n")
+                return
+            
+            else:
+                print("❌Failed, Arduino Sent an Unknown cmd\n")
+                return # exit the function if any error occurs
+
         time.sleep(0.01) # add dealy since otherwise it loops millions of times per sec
 
     
 
 # ================= GYRO CALIB & OFFSET UPDATE =================
 def do_gyro_calibration():
-
 
     time.sleep(0.05)   # 50 milliseconds dealy to get sync , and then clear the buffer. other wise even after clearing the buffer some values (accel , gyro contineously printed values) slip in the buffer.
     flush_serial()  # need to clear the buffer -> other wise the python reads all that old accel , gyro contineously printed values , which are in buffer.
@@ -346,7 +381,7 @@ def do_gyro_calibration():
                 lines = [l for l in lines if not l.startswith("GYRO=")]
 
                 # append new gyro bias
-                lines.append(f"\nGYRO={bx},{by},{bz}\n")
+                lines.append(f"\nGYRO={bx},{by},{bz}\n")              ### direct store the float values as it is (dont do :.6f etc) since in arduino we set 6/etc decimals gyro_bais send that value to python. and py simply stores.
 
                 with open(OFFSET_FILE, "w") as f:
                     f.writelines(lines)
@@ -363,6 +398,7 @@ def do_gyro_calibration():
 
 #  ================= Accel offset/bias Algo =================
 
+# function to calcualte the offset/bias of the accel like Magneto.
 def calibrate_accelerometer(data, g=1.0):
     """
     Robust Magneto-style accelerometer calibration.
@@ -435,7 +471,6 @@ def do_accel_calibration():
     raw_samples = []
 
     # --- Collect data ---
-
     while True:
         if ser.in_waiting:
             line = ser.readline().decode().strip()
@@ -497,19 +532,27 @@ def do_accel_calibration():
         np.allclose(A, 0) or
         np.allclose(b, 0)
         ):
-        print("\n❌ ACCEL CALIB FAILED → bad values (NaN / zero). Likely insufficient orientations or bad data.")
-        ser.write("ACCEL_CALIB_FAILED\n") # also tell arduino that accel calib failed. 
+        print("❌ ACCEL CALIB FAILED → bad values (NaN / zero). Likely insufficient orientations or bad data.")
+        ser.write(b"ACCEL_CALIB_FAILED\n") # also tell arduino that accel calib failed. 
         # return  - dont return now ... lets first confirm with arduino side also....
+        # ----- HANDSHAKE for knowing Arduino function also exit from the Accel_calib_funtion -----
         while True:
             if ser.in_waiting:
                 msg = ser.readline().decode().strip()
+
+                if not msg:
+                    continue     # 👈 ignore blank lines
+
                 print("ARDUINO:", msg) # good for seeing what did arduino send in buffer.
+                
                 if msg == "ERROR_GETTING_UPDATED_VALUES":
                     print("Accel_Calib Process Stopped Safely in Arduino & python\n")
                     return # now after confirming with arduino side also we return from function
+                
                 else:
-                    print("Any Error Occured.(arduino was not even able to read the 'ACCEL_CALIB_FAILED' msg) still exiting from - Arduino & Python Accel Calib function\n")
+                    print("Any Error Occured.(arduino was not even able to read the error msg from python -> 'ACCEL_CALIB_FAILED' ) still exiting from - Arduino & Python Accel Calib function\n")
                     return # exit the function if any error occurs
+            
             time.sleep(0.01) # add dealy since otherwise it loops millions of times per sec
 
     
@@ -531,7 +574,7 @@ def do_accel_calibration():
         ",".join(f"{A[i,j]:.6f}" for j in range(3))        ################# storing 6 decimals of ACC offset/bias in offset.txt (uno -> 6 , esp -> 8)
         for i in range(3)
     )
-    b_flat = ",".join(f"{b[i]:.6f}" for i in range(3))
+    b_flat = ",".join(f"{b[i]:.6f}" for i in range(3))      ################# storing 6 decimals of ACC offset/bias in offset.txt (uno -> 6 , esp -> 8)
 
     lines.append(f"\nACC_B={b_flat}\n")
     lines.append(f"\nACC_A={A_flat}\n")
@@ -544,48 +587,64 @@ def do_accel_calibration():
 
     # ---------- SEND ACC offset/bias TO ARDUINO ----------
 
-    # --- HANDSHAKE ---
-    ser.write("REQUEST_FOR_SENDING_UPDATED_VALUES\n")
+    # --- HANDSHAKE for sending updated values ---
+    ser.write(b"REQUEST_FOR_SENDING_UPDATED_VALUES\n")
+    print("PYTHON: REQUEST_FOR_SENDING_UPDATED_VALUES")
     while True:
         if ser.in_waiting:
             msg = ser.readline().decode().strip()
+            
+            if not msg:
+                continue     # 👈 ignore blank lines
+
             print("ARDUINO:", msg) # good for seeing what did arduino send in buffer.
-            if msg == "READY_FOR_UPDATED_VALUE":
-                print("Sending Updated Values To Arduino\n")
+            
+            if msg == "READY_FOR_UPDATED_VALUES":
+                print("Sending Updated Values To Arduino")
                 break
+            
             else:
                 print("Any Error may occured, While HandShake. Exit from - Arduino & Python Calib function \n")
                 return # exit the function if any error occurs
+        
         time.sleep(0.01) # add dealy since otherwise it loops millions of times per sec
 
-    # time.sleep(0.05) dont put any delay here ... other wise arduino will read before python writting the values 
-    #
 
 
     # ---- ACC_B ----
-    b_str = ",".join(f"{v:.6f}" for v in b)   ################# sending 6 decimals of ACC offset/bias to ard (uno -> 6 , esp -> 8)
+    b_str = ",".join(f"{v:.6f}" for v in b)         ################# sending 6 decimals of ACC offset/bias to ard (uno -> 6 , esp -> 8)
     ser.write(f"ACC_B,{b_str}\n".encode())
 
     # ---- ACC_A ----
     ser.write(b"ACC_A\n")
 
     for i in range(3):
-        row_str = ",".join(f"{A[i, j]:.6f}" for j in range(3))
+        row_str = ",".join(f"{A[i, j]:.6f}" for j in range(3))      ################# sending 6 decimals of ACC offset/bias to ard (uno -> 6 , esp -> 8)
         ser.write((row_str + "\n").encode())
     ser.write(b"END\n")
 
-    # ---------- WAIT FOR ACK ----------
-
+    # ---------- HandShake for done updating in Arduino ----------
     while True:
         if ser.in_waiting:
             msg = ser.readline().decode().strip()
+            
+            if not msg:
+                continue     # 👈 ignore blank lines
+
             print("ARDUINO:", msg) # good for seeing what did arduino send in buffer.
+            
             if msg == "ACC_UPDATED":
                 print("✔ Accel offsets updated on Arduino\n")
                 break
+            
             elif msg == "Error":
-                print("Any Error may occured, Arduino was not able to catch 'END' or not able to Read the offset values from python\n")
-                break
+                print("❌ Any Error may occured, while updating Accel offset on Arduino")
+                return
+
+            else:
+                print("❌ Failed, Arduino Send an Unknow cmd\n")
+                return # exit the function if any error occurs
+        
         time.sleep(0.01) # add dealy since otherwise it loops millions of times per sec
 
 
@@ -650,7 +709,7 @@ while True:
                 msg = ser.readline().decode().strip()
                 print("ARDUINO:", msg) 
                 if msg == "DONE":
-                    print("DONE\n")
+                    print("✔ DONE PRINTING\n")
                     break
 
 
@@ -663,7 +722,7 @@ while True:
                 msg = ser.readline().decode().strip()
                 print("ARDUINO:", msg) 
                 if msg == "DONE":
-                    print("DONE\n")
+                    print("✔ DONE PRINTING\n")
                     break
 
     elif cmd == "q":

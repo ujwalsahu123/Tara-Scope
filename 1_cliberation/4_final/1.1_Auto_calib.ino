@@ -1,279 +1,8 @@
-//// read the below writting and make it proper...
 
-
-
-
-// This code Prints Scaled & Caliberated ACC, GYRO, MAG data 
-// Acc is already calib, So It does Mag and Gyro calib after startup
-// use the Manual_calib code in sf and Auto_calib code in 3_full_motor_code.
-
-
-// need to write a single script for calculating gyro & mag offset/bias - where it uses motor to store the readings and then calculates the offsets, etc. 
-// so what we are doing currently  is -> manually running the calib code and using py to store the data and then using Magnetor to find offsets and storing the offsets in a code file then use that offset to do gyro and calib .  , and this that....nd 
-// but why to do all this much - things needs to be easy and automated. 
-// for example -> At every stargazing session - the tarascope device needs to do mag & gyro calib at startup. 
-// So we have these 2 scripts for gyro and mag (since they need to be calib at each startup/stargazing session) 
-// So we need to write a code file -> Auto_calib.ino  which does both -> gyro and mag calib and store there bias / offset in varialbes and then raw->scale->calib_apply and print the calib. 
-// so this Auto_calib.ino script will be a Live saver and we dont need to do calib manually by this that code files and storing the offset here and there.
-// So when ever we connect the hardware and place it properly and Give command "calib" from python to the ard.ino code then that arudino code ka Auto_calib() function will run when we calib and store the offsets in in a global variable , and we use those variables to get raw->scale->calib->sf.
-// So here we did Caliberation Abstraction - and we simply plub the device / or connect with wifi and give one single command , and it does calib by self. // this is awesome - since later at the time of 3_motor_code or 4_star_pointing then we dont have to hop on this that code to do calib and we can quicky calib and start to work on top.
-
-
-// PROCESS:-
-// use Auto_calib_gyro.ino & Auto_calib_mag.ino code files. 
-// so basically -> call the Auto_calib() function in the setup() function / or wait wait from cmd from terminal (later, in full_motor_code.ino)
-// And there is a Auto_calib() function :
-// it calls these functions -> Calc_gyro() , Calc_mag().  (use the Auto_calib_mag.ino, use the Auto_calib_mag.ino)
-// and store the offset values in a const array,etc . 
-// SO -> acc ka offset/bias is hardcoded in a const array,etc .  and mag,gyro ka we just now found out and stored.
-// and then in the main loop -> it reads Lsb values then scales it and use the const_array,etc to print the calib -> acc , gyro, mag. 
-// Systematic -> Write parameters, variables in the top: like:- Scaling_factor_Acc , Sacling_factor_Gyro , Sacling_factor_Mag , const Magnetic_field, const acc_offset array , etc.... , long acc_x , long acc_y , .... etc...
-
-// code kar ........
-
-
-
-// after Above Code Done : UPDATE this : - 
-
-// 1)
-// we will use this Auto_calib.ino code in the 3_full_motor_code.ino (where it just takes command from the termainl using py file) so -> we can calculate the offset/bias at startup by calling the Auto_calib() function in setup() or we can give a cmd from termianl to initiale caliberation. (i think we should do both -> startup up par caliberate first, and then whenever we wanna calib we give cmd)
-// for cmd initialisation -> update this part in this code -> use a if()cmd and run only when cmd = claib) (also if it asks for magnetic filed - then terminal may proper show hona chaheay, and we write in terminal then it should passes to ardu.)
-// dont put this updates in this code file-(2_Auto_calib.ino) make a new code file and usme put these updates (3_Auto_&_initilaize_calib.ino)
-
-// 2)
-// first go and figure out NOAA_api.py , location_api.py seen
-// we dont want to manually put the magnetic field value so lets use Api. 
-// so we will put this Auto_calib.ino code in 3_full_motor_code and it works as per py cmds so 
-// so what happens is - the Calc_mag() function in the 3_full_motor_code.ino/Auto_calib()_fun -> ask for magnetic field, so terminal may it should show -> and the py file see that its asking for magnetic filed - then the py code calls the NOAA api for magnetifc field data and pass it.
-// and if it is not able to get then it shows -> failed to fetch magentic filed from NOAA, please enter manually:- and then we enter manually in the terminal, and then it passes that value to the arduino. 
-// so lets write a small py code in (4_pass_MF.py) - which does this stuff. and run the 2_Auto_calib.ino code and check if it works or not... (if you need to update the arudino code also - then dont update here make new code file (4_get_MF.py)
-
-// use open meteo elevation - api for getting height . and lati logi using other api . then put the lati , longi , heigh in NOAA to get the magnetic filed. (noaa ka height/elvation is wrong, use open_meteo_elevation ka api for height.)
-
-////////// one IMP update -> dont do gyro and mag calib at startup use hardcoded values print calib values , and only when given cmd "j" then it does gyro calib , when press "h" then it does mag calib ,adn when pressed "l" it does acc calib (for now write a empty function for acc calib ) and update the hardcoded_offset and bias values and also print the new offset/ bias .  
-// in 3_full_motor_code what we can do is make offset/bias.txt file in python folder and when the ardu does the new calib and finds the new offset and bias - then it gives to python and python updates it in the offset.txt file.
-// and when the ard code starts then it ask python for the offset & bias values and it gives it those values form those offse.txt file -> so that we always have latest offsets stored in .txt files and can use them -> instead of using purana bad hardcoded offset bias value , and instead of again and again calibrating - (if we lost the new offset/bias values - because of arduino turned off or connection lost , etc ...)
-// so all calib is done using cmd , and startup par nahi hoga koi , and uses hardcoded values to give calib value. okkkkk.....
-// 
-
-
-// later also integrate Acc-collectData-calcOffset-calib in this in end to end device (when selling the product time par. not now )
+// Read 1.2_Auto_calib.py file for more info... 
+// to know more Info about the Accel_Auto_calib , Gyro_Auto_calib , Mag_Auto_calib code -> refer there each code files ... 
 
 // ###############################################################################################
-// Use the 1) ACC_Gyro_calib.ino code and 2) Auto_calib_mag.ino  code ....   and comment the hardcode_offset and bias ... and after startup it will Auto_calib gyro and mag. 
-// and then we use this code in 3_full_motor_code - but over there instead of calib in the start -> it will use hardcoded offset/bias values for calibration - and only after the cmd from .py file comes then only it performes the calib of gyro and mag one by one and updates thoses hardcoded values with the new calculated offset and bias. 
-// and when we press the cmd "j" the py files send to ard and the ard then only runs the Auto_calib() func and in that fun the Auto_gyro_calib() and Auto_mag_calib() functions are called one by one. and jaise hee py send calib cmd then it makes api call for getting magnetic field and stores the value. and when the arudino ask for magnetic field the it gives that value. and if it api call fails and the ard is asking for magnetic value then it propmt in terminal and ask user for manually entring the magnetic field.
-// we can also later integrate the Auto_acc_calib() function -> but in that kya hoga ki there will be a seperate cmd for acc calib -> "k" . and jab man hoga tab hee acc karange. verna use hardcoded value same concept was as we done for mag and gyro hardcoded value (and update when calib done.)
-
-
-
-
-
-
-/// i think we can use this cody only for sf also . just comment out the part -> where it ask python for offsets . and also dont press the j k l - when its running.  so hoga kya ki it will use the hardcoded wala.
-
-/// use the good - hardcoded A,b vector values 
-
-
-
-
-
-
-//// mix 0_Acc_gyro_code and Auto_calib_mag code ... but also refer the 1_calib/0_sensor_basic/full_code.ino since usme format is there how to use ISM and MMC together using sensor hub , etc...
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ok now what i wanna do is -> i wanna write a py code file -> from which we send commands 
-// "j" gyro calib , "l" accel calib , "h" for calculating local_g , magnetic filed. 
-// ok so in the start setup() function the arduino asks python for gyro_bias value , accel_offset and bias value , and then python gives it those values from the offset.txt where it is stored. 
-// and if python is able to send those values then arudino and arduino catches it and updates the hardcoded values - and also prints "using offset.txt values" . and if python is not able to get the data from offset.txt then it sends - couldnt found - and then arduino checks this and then prints "using hardcoded values" and dosent updates the hardcoded values.
-// if stores all the offset/bias in a single txt file is hard then we can make seperate txt files for each accel , gyro..
-
-
-// ok so when i press j then its does gyro calib and then form the gyro_calib function it sends the bias vector to the python and then python updates it in a offsets.txt file .
-
-// when i press h then it ask the user for lati , longi , height . then uses the formula and api to get the local_g and magnetic field and then stores that calculated values in offsets.txt  ### give it code file
-
-// when i press l then the accel calib happens - and then arduino prints values , and python reads those values and scales it and uses the local_g from the offsets.txt and then uses the function to calc the bias and offset using the collected value and local_g . and then updates the offset/bias in offset.txt and also sends it to arudino and then arudino catches it updates the hardcoded values..
-
-
-
-
-
-
-
-
-
-
-
-
-// GYRO INFO ----------------------------------------------------------------------------------------------
-
-// Gyro calib is required after every startup. since the bias is dependent on temp, etc 
-
-// so we write a calc_gyro_bias() function which collects data points and find bias - and then we can use that bias to get calib_output. 
-// so we can either directly call this calc_gyro_bias() function in the setup() so as it startups - it calculates. 
-// or we can call it when the user gives cmd. 
-// both are fine - but using user cmd is better - so that user when ever wants can calib .... 
-
-// process: 
-// so the code prints the calib values contineously . 
-// & since calib is as per user cmd - so jabtak user calib naa kar tab tak - bekar unclib values print nahi hone chaheay ->
-// so initally we use the hardcoded bias values (not accurate but okayish) for getting the calib_value. 
-// and when we press "j" then it calls the calc_gyro_bias() function - and updates that hardcoded with the new one ...and print the new one...
-// in calc_gyro_bias() function it first Reads raw values for 1000 readings 
-// and then Calculates the bias(lsb) that biass and updates that hardcodecd bias array
-// then in main loop we do raw_lsb => calib using bias_lsb (hardcoded/updated) => scale to dps
- 
-// Code Process : 
-// call the calc_gyro() function when cmd "j" is pressed
-// in that function read data - calculate the bias - and update the hardcoded bias.
-// then in main loop simply do calib and print.  raw->calib->scale.
-
-// We can do any  // raw->scale->calib // or // raw->calib->scale // both are same but caliberating first (-bias_lsb) is better since less binary_representation noise.
-// if you want scale first -> the code is also there down below. *******code_2_scale_first******
-// but use code_1. its Better.
-
-
-// --------------
-// at rest the values should be 0 for all.
-// 1000 samples read (dosent matter how many hz you keep)
-// keep the sensor STILL at calib time.
-
-// ------Result--------
-// after code run ->  calib is done fine- so the vales are closer to 0. 
-// but since the gyro is very noisy thats why values seems to see shaky - but they are very small noise 
-// ex:- 
-// x,y,z
-// 0.006952, 0.054626, 0.047337
-// -0.023673, 0.032751, 0.012337
-// so values are closer to 0, but super noisy, but the noise is very small +-0.0x , so max 0.1 to 0.02 degree error at Rest position.
-
-
-// i tested this works and it uses hardcoded bias intially and updated bias later after calibration.
-
-
-// As we know that bias drift as per time, so if we calculate the bias at differnt time -> startup time , 20 seconds after the startup then we will get differnt bias. 
-// so if we calc the bias after some time of startup -> thus we get drifted bias ...
-// but sensor fusion takes care of the bias drift (using mag, acc) , and we do gyro bias calculation at the startup or later is fine .
-// and a stable calibration at whatever time is fine, (but you will think that latest calib will give latest bias and it will be more accurate ... 
-// so yes, ✅ Calibrating slightly later (after warm-up) usually gives slightly better / more stable bias (after heat up, it stays at stable heat)
-// and we know that Bias drift never fully stops -> so we do NOT need to recalibrate gyro bias frequently., since sf takes cares of drift.
-// so Thus -> 1-stable calib of bias after 1 miniute of statup is enough.. and after that sf will take care of drift. 
-// & for more precise you can do after every 15 min... but not sure if it imporves.. or its unecessay (very small improvement)
-// ex:-
-// Startup bias:
-// bx = 58.77
-// by = -184.35
-// bz = 62.86
-// After 1 min:
-// bx = 56.72   (-2.05)
-// by = -183.29 (+1.06)
-// bz = 63.93   (+1.07)
-
-
-// so do calib 30 sec after the startup , just calib for 1000 values not more. , do calib every 10 min...(later figure out time interval)
-// use code_1 its better.
-
-// Collect_data_lsb => find Bias_lsb
-// Raw_lsb - bias_lsb => calib_lsb
-// calib_lsb * scaling_factor => calib_dps
-
-
-
-
-
-// Accel INFO ----------------------------------------------------------------------------------------------
-
-// we can do Accel Auto Calculate the offset/bias using data points & local_g (instead of using magento) 
-// so that no need to Run 3 differnt files and use magneto then store offset/bias here and there. 
-// We just simply press a Cmd "L" and then it uses the 2 motors to move the sensor and collect the data at different orientaitons
-// and then send that data to python where it uses the collected data and local_g to calculate the offset/bias and it also stores it in offset.txt file
-// and then send that offset/bias to arduino , so that the arduino gives calibrated values as per the new offset/bias we calculated.
-// put the device in sleeping position before calib (so that sensors can move 3 axis rotation)
-// then stand up the device and do gyro calib , mag calib - and then dont touch the device.
-
-// NOTES:
-// -> at differnt gravity /place its better to calcualte new data and then use that data with the local_g of that place.
-// (No need to do Accel Calib at every startup but if the device is in at new location than previously acc_calib location ) 
-// Also later think on this -> Calib karna too accha hai , but need to think ki improvement hoga issay ya nahi (need to check this) since noise is way bigger than these small accuracy jugad we do -(calib as per local g.)
-// Also later think -> if the main thing we are doing is calib as per the local_g then can we use the previous data collected and just calcuate the offset/bias as per that previously_collected data and the current location ka local_g.
-// we are not doing calc offset/bias here since its very heavy computation and it needs numpy library.
-
-
-// PROCESS : 
-// apply caliberation on live data - and see the xyz and Magnitude . 
-// by seeing the magnitude you can judge if the offset are good or bad as per (magnitude close to 1).
-// so there is hardcoded offset prewritten and it also ask for the latest offsets and bias from python form offset.txt
-// also auto calib is there when presses "l"
-// here we use motor to print the data.
-// it prints - average of 25 values (we are doing averaging here only in arduino, and not in py)
-// and then in py - it just reads and scales the value and then calculates the offset and bias over there and then store it in offset.txt and also send it to arduino 
-// and arduino updates the offset and bias and give calib_values as per that new only.
-
-
-// # For Accel dont do Raw->calib->Scale , do Raw->scale-> calib. (since when you do Raw-> calib-> scale then precision is lost since the lsb values are super big, so offset are like 0.000061)
-
-
-
-
-
-
-
-
-
 
 
 
@@ -315,29 +44,19 @@ double gyro_bias[3] = { 44.295409, -169.449102, 72.213573}; // // Hardcode Gyro 
 #define AVG_MEAS  25 // take Avg of N readings to get 1 stable reading /per orientation.
 
 const int STEPS_PER_REV = 4096;
-// const int N_orientations = 64 ;
-
-const int N_orientations = 4 ;
-
+const int N_orientations = 64 ;
 //SET THIS //(value must be -> 2^N). [VALUES -> (1 = 360Deg) (2 = 180Deg) (4 = 90Deg) (8 = 45Deg) (16 = 22.5Deg) (32 = 11.25Deg) (64 = 5.625Deg) (128 = 2.8125Deg) (256 = 1.4Deg)]
 const int STEPS_to_move_per_orientation = (STEPS_PER_REV / N_orientations) ;
 // So if 4096/1_orientation => so 4096_steps_per_orientation to complete 1 full rotation. if 4096/2_orientaitons => so 2048_step)per_orientation and it will take 2 orientatins to complete 1 full rotation.      
 
 // Hardcoded offset and bias - (g_2g_Nofilter_0.97859) 
 // change it as per filter you use.
-// 1 time Calib when in new Location.
-
+// 1 time Calib when in new Location (and then use that latest values using "g")
 double A_acc[3][3] = 
-{{1.0, 1.0, 1.0},
- {1.0, 1.0, 1.0},
- {1.0, 1.0, 1.0}};
-double b_acc[3] = { 1.0, 1.0, 1.0}; 
-
-// double A_acc[3][3] = 
-// {{0.97522389, 0.00009342, -0.00058922},
-//  {0.00009342, 0.98066595, 0.00053047},
-//  {-0.00058922, 0.00053047, 0.98232234}};
-// double b_acc[3] = { 0.00500114, -0.01523379, 0.01161619}; 
+{{0.97522389, 0.00009342, -0.00058922},
+ {0.00009342, 0.98066595, 0.00053047},
+ {-0.00058922, 0.00053047, 0.98232234}};
+double b_acc[3] = { 0.00500114, -0.01523379, 0.01161619}; 
 // ################################################################
 
 
@@ -451,12 +170,11 @@ void Read_Accel_data()
     Serial.print(ay, n_acc_raw); Serial.print(",");
     Serial.println(az, n_acc_raw);
 
-    }
+}
 
 // =======================================================
 // Function which uses 2_motors to collecte the Acc data at differnt orientations
 // =======================================================
-
 void calc_acc_offset()
 { 
   // cannot do calculation of ACC offset and bias over here .
@@ -523,20 +241,39 @@ void calc_acc_offset()
       delay(1000); // keep
       motorAlt.move(false, (STEPS_PER_REV/4)); // move the alt motor back to -90 degree (back to inital orientation)
       // So now we are OG back to OG inital orientation.
+      
       delay(100); // keep
       Serial.println("ACC_RAW_DATA_SHARING_DONE"); // finished sending raw accel data to Python
   
 
 
+      // --------------- get new Accel offset/bias from python and update the  hardcoded once --------------------------
 
+      // wait for python to process the data and send the new offset/bias values. if not received in 5 sec then timeout and exit the function.
+      unsigned long t0 = millis();
+      while (true)
+      {
+        if (Serial.available())
+          break;
+
+        if (millis() - t0 > 5000)   // 5 sec timeout
+        {
+          Serial.println("TIMEOUT");
+          return;
+        }
+      }
+      
       // ---- HANDSHAKE ----
-      while(!Serial.available())         // wait for python to send the msg that it is sending updated offset/bias values.
+      while(true)         // wait for python to send the msg that it is sending updated offset/bias values.
       { 
-        dealyt(100); // keep // let python write the data first before arduino reads.
+        if (Serial.available() > 0)
+        {
 
         // read single line from python
         String msg = Serial.readStringUntil('\n');
         msg.trim();
+
+        if (msg.length() == 0) continue;   // 👈 ignore blank lines
         
         if(msg == "REQUEST_FOR_SENDING_UPDATED_VALUES")
         { 
@@ -548,180 +285,261 @@ void calc_acc_offset()
           Serial.println("ERROR_GETTING_UPDATED_VALUES"); // something went wrong
           return; // exit the function - without updating the hardcoded values.
         }
-        else{
-          Serial.println(msg); // for debugging
+        else{ // when unexpected msg received
+          Serial.println(msg); // print the msg for debugging
           return; // exit the function - without updating the hardcoded values.
+        }
+
         }
       }
 
-// ---------------------- get new Accel offset/bias from python and update the  hardcoded once --------------------------
-      
-      // ---- ACC BIAS ----
-      delay(100); // Imp, let python first read that data sharing is done, and let it store the values in offset.txt then it sends the values ,, and after that only arduino should read it..
-      String line = Serial.readStringUntil('\n');
-      line.trim();  // "ACC_B,0.0045,-0.0148,0.0123"
 
-      if (line.startsWith("ACC_B"))
+      bool gotAccA = false;
+      bool gotAccB = false;
+      int accARow = 0;
+
+      while (true)
       {
-        int p1 = line.indexOf(',');
-        int p2 = line.indexOf(',', p1 + 1);
-        int p3 = line.indexOf(',', p2 + 1);
-  
-        b_acc[0] = line.substring(p1 + 1, p2).toFloat();
-        b_acc[1] = line.substring(p2 + 1, p3).toFloat();
-        b_acc[2] = line.substring(p3 + 1).toFloat();
-      }
+        if (!Serial.available())
+          continue;   // wait for data to come
 
-      // ---- ACC MATRIX ----
-      Serial.readStringUntil('\n'); // consumes "ACC_A"
-
-      for (int i = 0; i < 3; i++)
-      {
-        line = Serial.readStringUntil('\n');
+        String line = Serial.readStringUntil('\n');
         line.trim();
-  
-        int p1 = line.indexOf(',');
-        int p2 = line.indexOf(',', p1 + 1);
-  
-        A_acc[i][0] = line.substring(0, p1).toFloat();
-        A_acc[i][1] = line.substring(p1 + 1, p2).toFloat();
-        A_acc[i][2] = line.substring(p2 + 1).toFloat();
-      }
 
+        // ---- IGNORE BLANK / GARBAGE ----
+        if (line.length() == 0)
+          continue;
 
-  Serial.println(b_acc[2],6 );
-  Serial.println(A_acc[0][0],6 );
-  Serial.println(A_acc[0][1],6 );
-  Serial.println(A_acc[0][2],6 );
-  Serial.println(A_acc[1][0],6 );
-  Serial.println(A_acc[1][1],6 );
-  Serial.println(A_acc[1][2],6 );
-  Serial.println(A_acc[2][0],6 );
-  Serial.println(A_acc[2][1],6 );
-  Serial.println(A_acc[2][2],6 );
-      
+        // -------- ACC_B --------
+        if (line.startsWith("ACC_B,"))
+        {
+          int p1 = line.indexOf(',');
+          int p2 = line.indexOf(',', p1 + 1);
+          int p3 = line.indexOf(',', p2 + 1);
 
+          if (p1 < 0 || p2 < 0 || p3 < 0)
+          {
+            Serial.println("Error");
+            return;
+          }
 
-      // ---- END ----
-      line = Serial.readStringUntil('\n');
-      line.trim();
+          b_acc[0] = line.substring(p1 + 1, p2).toFloat();
+          b_acc[1] = line.substring(p2 + 1, p3).toFloat();
+          b_acc[2] = line.substring(p3 + 1).toFloat();
 
-      if(line == "END")
-      {
-        Serial.println("ACC_UPDATED"); // for handshake -> that we got the offset/bias from python and updated the 
-      }
-      else{
-      Serial.println("Error");  // Python dosent print END after sending values... or etc error
-    }
+          gotAccB = true;
+        }
 
-  delay(500); // keep
+        // -------- ACC_A header --------
+        else if (line == "ACC_A")
+        {
+          accARow = 0;
+        }
 
+        // -------- ACC_A rows --------
+        else if (accARow < 3 && gotAccB)
+        {
+          int p1 = line.indexOf(',');
+          int p2 = line.indexOf(',', p1 + 1);
+
+          if (p1 < 0 || p2 < 0)
+          {
+            Serial.println("Error");
+            return;
+          }      
+
+          A_acc[accARow][0] = line.substring(0, p1).toFloat();
+          A_acc[accARow][1] = line.substring(p1 + 1, p2).toFloat();
+          A_acc[accARow][2] = line.substring(p2 + 1).toFloat();
+
+          accARow++;
+          if (accARow == 3)
+            gotAccA = true;
+        }
+
+        // -------- END --------
+        else if (line == "END")
+        {
+          if (gotAccA && gotAccB)
+          {            
+            Serial.println("ACC_UPDATED");  // for handshake -> that we got the offset/bias from python and updated the hardcoded values.
+          }
+          else
+          {
+            Serial.println("Error"); // END printed but the ACC_A and ACC_B not received properly
+          }
+          return; // exit after read End 
+        }
+
+        // -------- UNKNOWN --------
+        else
+        {
+          Serial.println(line); // print the UNKNOWN LINE for debugging
+        }
+
+      }// end while true
+
+    delay(500); // keep
 }
 
 
 // =======================================================
 // GET INITIAL OFFSET/BIAS FROM PYTHON
-// =======================================================
-
-
+// ======================================================= 
 void requestOffsetsFromPython()
 {
   delay(100); // # 100 milliseconds dealy IMP, keep 100 only.
-  Serial.println("READY_FOR_OFFSETS");
   
-  unsigned long t0 = millis();
-  while (!Serial.available())
-  {
-    if (millis() - t0 > 5000) // wait for 5 second for python to give the offsets...
-    {
-      Serial.println("Using hardcoded values (timeout)");
-      return;
+      // wait for python to process the data and send the new offset/bias values. if not received in 5 sec then timeout and exit the function.
+      unsigned long t0 = millis();
+      while (true)
+      {
+        if (Serial.available())
+        break;
+
+        if (millis() - t0 > 5000)   // 5 sec timeout
+        {
+          Serial.println("TIMEOUT");
+          return;
+        }
+      }
+
+
+    // ---- HANDSHAKE ----
+    while(true)         // wait for python to send the msg that it is sending updated offset/bias values.
+    { 
+      if (Serial.available() > 0)
+      {
+        
+      // read single line from python
+      String msg = Serial.readStringUntil('\n');
+      msg.trim();
+
+      if (msg.length() == 0) continue;   // 👈 ignore blank lines
+        
+      if(msg == "REQUEST_FOR_SENDING_UPDATED_VALUES")
+      { 
+        Serial.println("READY_FOR_UPDATED_VALUES"); 
+        break; // exit the while loop
+      }
+      else if(msg == "FAILED_GETTING_OFFSETS")
+      {
+        Serial.println("ERROR_GETTING_UPDATED_VALUES"); // something went wrong
+        return; 
+      }
+      else{ // when unexpected msg received
+        Serial.println(msg); // print the msg for debugging
+        return; 
+      }
+
+      }
     }
-  }
 
-//  can put a handshake here ... ...
-// then delay
-
-delay(500); // imp, let python send the values fully before the arduino reads.. (other wise arduino will read first before python sending)
-
-// ---- GYRO ----
-String line = Serial.readStringUntil('\n');
-line.trim();  // "GYRO,28.58,-157.54,78.52"
-
-if (line.startsWith("GYRO"))
-{
-  int p1 = line.indexOf(',');
-  int p2 = line.indexOf(',', p1 + 1);
-  int p3 = line.indexOf(',', p2 + 1);
-
-  gyro_bias[0] = line.substring(p1 + 1, p2).toFloat();
-  gyro_bias[1] = line.substring(p2 + 1, p3).toFloat();
-  gyro_bias[2] = line.substring(p3 + 1).toFloat();
-}
-
-// ---- ACC BIAS ----
-line = Serial.readStringUntil('\n');
-line.trim();  // "ACC_B,0.0045,-0.0148,0.0123"
-
-if (line.startsWith("ACC_B"))
-{
-  int p1 = line.indexOf(',');
-  int p2 = line.indexOf(',', p1 + 1);
-  int p3 = line.indexOf(',', p2 + 1);
+    // --------------- get new offset/bias from python and update the hardcoded once --------------------------
+    bool gotGyro = false;
+    bool gotAccB = false;
+    bool gotAccA = false;
+    int accARow = 0;
   
-  b_acc[0] = line.substring(p1 + 1, p2).toFloat();
-  b_acc[1] = line.substring(p2 + 1, p3).toFloat();
-  b_acc[2] = line.substring(p3 + 1).toFloat();
-}
+    while (true)
+    {
+      if (!Serial.available())
+        continue; // wait for data to come
 
-// ---- ACC MATRIX ----
-Serial.readStringUntil('\n'); // consumes "ACC_A"
+      String line = Serial.readStringUntil('\n');
+      line.trim();
 
-for (int i = 0; i < 3; i++)
-{
-  line = Serial.readStringUntil('\n');
-  line.trim();
-  
-  int p1 = line.indexOf(',');
-  int p2 = line.indexOf(',', p1 + 1);
-  
-  A_acc[i][0] = line.substring(0, p1).toFloat();
-  A_acc[i][1] = line.substring(p1 + 1, p2).toFloat();
-  A_acc[i][2] = line.substring(p2 + 1).toFloat();
-}
+      if (line.length() == 0)
+        continue; // ignore blank lines
 
+      // -------- GYRO --------
+      if (line.startsWith("GYRO,"))
+      {
+        int p1 = line.indexOf(',');
+        int p2 = line.indexOf(',', p1 + 1);
+        int p3 = line.indexOf(',', p2 + 1);
 
-line = Serial.readStringUntil('\n');   // reads "END" // for safety
-line.trim();
- 
+        if (p1 < 0 || p2 < 0 || p3 < 0)
+        {
+          Serial.println("Error");
+          return;
+        }
 
-// // I tested , it actally updates the offsets as per the offset.txt values
-Serial.println(gyro_bias[0],6);
-Serial.println(gyro_bias[1],6);
-Serial.println(gyro_bias[2],6);
-Serial.println(b_acc[0],6 );
-Serial.println(b_acc[1],6 );
-Serial.println(b_acc[2],6 );
-Serial.println(A_acc[0][0],6 );
-Serial.println(A_acc[0][1],6 );
-Serial.println(A_acc[0][2],6 );
-Serial.println(A_acc[1][0],6 );
-Serial.println(A_acc[1][1],6 );
-Serial.println(A_acc[1][2],6 );
-Serial.println(A_acc[2][0],6 );
-Serial.println(A_acc[2][1],6 );
-Serial.println(A_acc[2][2],6 );
-  
-  
-  if(line == "END")
-  {
-    Serial.println("Updated all offset/bias values");
-  }
-  else{
-    Serial.println("Error");  // Python dosent print END after sending values... or etc error
-  }
-  
-  delay(500); // keep
+        gyro_bias[0] = line.substring(p1 + 1, p2).toFloat();
+        gyro_bias[1] = line.substring(p2 + 1, p3).toFloat();
+        gyro_bias[2] = line.substring(p3 + 1).toFloat();
+
+        gotGyro = true;
+      }
+
+      // -------- ACC_B --------
+      else if (line.startsWith("ACC_B,"))
+      {
+        int p1 = line.indexOf(',');
+        int p2 = line.indexOf(',', p1 + 1);
+        int p3 = line.indexOf(',', p2 + 1);
+
+        if (p1 < 0 || p2 < 0 || p3 < 0)
+        {
+          Serial.println("Error");
+          return;
+        }
+
+        b_acc[0] = line.substring(p1 + 1, p2).toFloat();
+        b_acc[1] = line.substring(p2 + 1, p3).toFloat();
+        b_acc[2] = line.substring(p3 + 1).toFloat();
+
+        gotAccB = true;
+      }
+
+      // -------- ACC_A HEADER --------
+      else if (line == "ACC_A")
+      {
+        accARow = 0;
+      }
+
+      // -------- ACC_A ROWS --------
+      else if (accARow < 3 && gotAccB)
+      {
+        int p1 = line.indexOf(',');
+        int p2 = line.indexOf(',', p1 + 1);
+
+        if (p1 < 0 || p2 < 0)
+        {
+          Serial.println("Error");
+          return;
+        }
+
+        A_acc[accARow][0] = line.substring(0, p1).toFloat();
+        A_acc[accARow][1] = line.substring(p1 + 1, p2).toFloat();
+        A_acc[accARow][2] = line.substring(p2 + 1).toFloat();
+
+        accARow++;
+        if (accARow == 3)
+          gotAccA = true;
+      }
+
+      // -------- END -------
+      else if (line == "END")
+      {
+        if (gotGyro && gotAccB && gotAccA)
+          Serial.println("OFFSETS_UPDATED"); // for handshake -> that we got the offset/bias from python and updated the hardcoded values.
+        else
+          Serial.println("Error"); // if END printed but all values not received properly
+
+        return;
+      }
+
+      // -------- UNKNOWN --------
+      else
+      { // when unexpected msg received
+        Serial.println(line); // print the UNKNOWN LINE for debugging
+        return;
+      }
+
+    } // end while true
+
+    delay(500); // keep
 }
 
 
@@ -765,6 +583,8 @@ void Calib_Output_Print()
         calibAccel[2] = A_acc[2][0] * (rawAcc[0] - b_acc[0]) + A_acc[2][1] * (rawAcc[1] - b_acc[1]) + A_acc[2][2] * (rawAcc[2] - b_acc[2]);
 
 
+
+
         // ------------------------------------------PRINT---------------------------------------------------------
         ///// in sf - instead of prining we give it to sf. 
         Serial.print("Gyro calib :  ");
@@ -791,6 +611,29 @@ void Calib_Output_Print()
        }
 }
 
+void Offset_bias_values_Print()
+{
+  delay(100);// imp
+  Serial.print("GYRO: ");
+  Serial.print(gyro_bias[0],6);Serial.print(", ");
+  Serial.print(gyro_bias[1],6);Serial.print(", ");
+  Serial.println(gyro_bias[2],6);
+  Serial.print("B_ACC: ");
+  Serial.print(b_acc[0],6 );Serial.print(", ");
+  Serial.print(b_acc[1],6 );Serial.print(", ");
+  Serial.println(b_acc[2],6 );  
+  Serial.print("A_ACC: ");
+  Serial.print(A_acc[0][0],6 );Serial.print(", ");
+  Serial.print(A_acc[0][1],6 );Serial.print(", ");
+  Serial.print(A_acc[0][2],6 );Serial.print(", ");
+  Serial.print(A_acc[1][0],6 );Serial.print(", ");
+  Serial.print(A_acc[1][1],6 );Serial.print(", ");
+  Serial.print(A_acc[1][2],6 );Serial.print(", ");
+  Serial.print(A_acc[2][0],6 );Serial.print(", ");
+  Serial.print(A_acc[2][1],6 );Serial.print(", ");
+  Serial.println(A_acc[2][2],6 );
+  Serial.println("DONE");
+}
 
 
 // =======================================================
@@ -904,26 +747,7 @@ void loop()
       case 'p':
         // print all offset/bais values , good for debugging and see if the offset.txt values or calib values actually updated or not.
         streamEnabled = false;
-        delay(100);// imp
-        Serial.print("GYRO: ");
-        Serial.print(gyro_bias[0],6);Serial.print(", ");
-        Serial.print(gyro_bias[1],6);Serial.print(", ");
-        Serial.println(gyro_bias[2],6);
-        Serial.print("B_ACC: ");
-        Serial.print(b_acc[0],6 );Serial.print(", ");
-        Serial.print(b_acc[1],6 );Serial.print(", ");
-        Serial.println(b_acc[2],6 );
-        Serial.print("A_ACC: ");
-        Serial.print(A_acc[0][0],6 );Serial.print(", ");
-        Serial.print(A_acc[0][1],6 );Serial.print(", ");
-        Serial.print(A_acc[0][2],6 );Serial.print(", ");
-        Serial.print(A_acc[1][0],6 );Serial.print(", ");
-        Serial.print(A_acc[1][1],6 );Serial.print(", ");
-        Serial.print(A_acc[1][2],6 );Serial.print(", ");
-        Serial.print(A_acc[2][0],6 );Serial.print(", ");
-        Serial.print(A_acc[2][1],6 );Serial.print(", ");
-        Serial.println(A_acc[2][2],6 );
-        Serial.println("DONE");
+        Offset_bias_values_Print();
         streamEnabled = true;
         break;
       
@@ -931,27 +755,27 @@ void loop()
         // to display 10 calib_output values in terminal. (no need , just for degubbing)
         streamEnabled = false;
         delay(100);
-        for(int i = 0 ; i < 10 ; i++) 
-        { Calib_Output_Print(); }
+        for(int i = 0 ; i < 10 ; i++) { Calib_Output_Print(); }
         Serial.println("DONE");
         streamEnabled = true;
         break;
          
-
       default:
         break;
     }
   }
 
+  // IN the LOOP - Always Calc the Calib output and send to SF (when no cmd is being processed / streamEnabled = true)
   now = micros();
   if (now - lastRead >= PERIOD_US)
   {
-
     lastRead = now;
+
     if(streamEnabled)
     {
-    // Calib_Output_Print(); // in sf -> in this function we will not print the calib values , but do SF ... 
+      // Calib_Output_Print();           // in sf -> we will not print the calib values , but do SF ... 
     }
+
   }
 
 }
